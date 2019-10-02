@@ -1,3 +1,5 @@
+package dev.rsoliveira.tools.binpacking;
+
 import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.ItemRotation;

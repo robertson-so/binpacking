@@ -1,3 +1,5 @@
+package dev.rsoliveira.tools.binpacking;
+
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

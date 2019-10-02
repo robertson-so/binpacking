@@ -1,3 +1,5 @@
+package dev.rsoliveira.tools.binpacking;
+
 import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.ItemRotation;
@@ -9,16 +11,14 @@ import junit.framework.TestCase;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Set8Test extends TestCase {
+public class Set15Test extends TestCase {
 
-    public void testSet8() {
+    public void testSet15() {
         Container container = new Container(1, 104, 96, 84, ItemRotation.FULL);
         List<Item> items = new ArrayList<>();
-        // set1: 12 items; 5 types; 89.5% full
-        items.add(new Item(1, "1", 70, 45, 24, 4, ItemRotation.FULL));
-        items.add(new Item(2, "2", 70, 59, 24, 4, ItemRotation.FULL));
-        items.add(new Item(3, "3", 14, 40, 48, 2, ItemRotation.FULL));
-        items.add(new Item(4, "4", 14, 64, 48, 2, ItemRotation.FULL));
+        // set1: 18 items; 5 types; 89.5% full
+        items.add(new Item(1, "1", 14, 13, 2, 576, ItemRotation.FULL));
+        items.add(new Item(2, "2", 21, 13, 4, 576, ItemRotation.FULL));
 
         List<Solution> solutions = new ArrayList<>();
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
