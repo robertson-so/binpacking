@@ -1,20 +1,20 @@
 package dev.rsoliveira.tools.binpacking.domain;
 
+import java.util.Objects;
+
 /**
  * The item to be packed inside a container.
  */
-public class Item extends Volume {
+public class Item extends Volume implements Cloneable {
 
-  public String code;
-  public boolean packed;
-  public long positionX, positionY, positionZ;
-  public long orientationX, orientationY, orientationZ;
-  public ItemRotation rotation;
+  private String code;
+  private boolean packed;
+  private long positionX, positionY, positionZ;
+  private long orientationX, orientationY, orientationZ;
 
   public Item(int id, String code, long dimension1, long dimension2, long dimension3, int quantity, ItemRotation rotation) {
-    super(id, dimension1, dimension2, dimension3, quantity);
+    super(id, dimension1, dimension2, dimension3, quantity, rotation);
     this.code = code;
-    this.rotation = rotation;
   }
 
   public void reset() {
@@ -38,5 +38,56 @@ public class Item extends Volume {
     this.positionX = positionX;
     this.positionY = positionY;
     this.positionZ = positionZ;
+  }
+
+  public long getPositionX() {
+    return positionX;
+  }
+
+  public long getPositionY() {
+    return positionY;
+  }
+
+  public long getPositionZ() {
+    return positionZ;
+  }
+
+  public long getOrientationX() {
+    return orientationX;
+  }
+
+  public long getOrientationY() {
+    return orientationY;
+  }
+
+  public long getOrientationZ() {
+    return orientationZ;
+  }
+
+  public String getCode() {
+    return code;
+  }
+
+  public boolean isPacked() {
+    return packed;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Item)) return false;
+    Item item = (Item) o;
+    return code.equals(item.code);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(code);
+  }
+
+  @Override
+  protected Object clone() throws CloneNotSupportedException {
+    Volume volume = (Volume) super.clone();
+    return new Item(volume.getId(), getCode(), volume.getDimension1(), volume.getDimension2(), volume.getDimension3(), volume.getQuantity(), volume.getRotation());
   }
 }

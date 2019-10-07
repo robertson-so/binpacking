@@ -11,13 +11,11 @@ import junit.framework.TestCase;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Set5Test extends TestCase {
+public class Set5Test extends SetAbstractTest {
 
-    public void testSet5() {
-        Container container = new Container(1, 104, 96, 84, ItemRotation.FULL);
+    public Set5Test() {
         List<Item> items = new ArrayList<>();
 
-        // set5: 31 items; 31 types; 68.7% full
         items.add(new Item(1, "1", 1, 2, 3, 1, ItemRotation.FULL));
         items.add(new Item(2, "2", 4, 5, 6, 1, ItemRotation.FULL));
         items.add(new Item(3, "3", 7, 8, 9, 1, ItemRotation.FULL));
@@ -50,16 +48,7 @@ public class Set5Test extends TestCase {
         items.add(new Item(30, "30", 41, 42, 43, 1, ItemRotation.FULL));
         items.add(new Item(31, "31", 44, 45, 46, 1, ItemRotation.FULL));
 
-        List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
-        Solution solution = simulator.simulate(container, items);
-        solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
-            solutions.add(solution);
-        }
-
-        assertEquals(2, solutions.size());
-        assertEquals(68.65f, solutions.get(0).percentageContainerVolumeUsed, 0.01);
+        this.setItems(items);
+        this.setContainerVolumeUsed(68.65);
     }
 }

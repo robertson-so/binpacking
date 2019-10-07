@@ -27,13 +27,13 @@ public class IsoPalletTest extends TestCase {
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (solution.getRemainingItems().size() > 0) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
         assertEquals(1, solutions.size());
-        assertTrue(solutions.get(0).percentageContainerVolumeUsed > 81f);
+        assertTrue(solutions.get(0).getPercentageContainerVolumeUsed() > 81f);
     }
 
     public void testPallet1ContainerYItemFull() {
@@ -50,13 +50,13 @@ public class IsoPalletTest extends TestCase {
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (solution.getRemainingItems().size() > 0) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
         assertEquals(2, solutions.size());
-        assertTrue(solutions.get(0).percentageContainerVolumeUsed > 73.3f);
+        assertTrue(solutions.get(0).getPercentageContainerVolumeUsed() > 73.3f);
     }
 
     public void testPallet1ContainerFullItemY() {
@@ -73,13 +73,13 @@ public class IsoPalletTest extends TestCase {
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (solution.getRemainingItems().size() > 0) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
         assertEquals(16, solutions.size());
-        assertEquals(45.55f, solutions.get(0).percentageContainerVolumeUsed, 0.01);
+        assertEquals(45.55f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerYItemY() {
@@ -96,13 +96,13 @@ public class IsoPalletTest extends TestCase {
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (solution.getRemainingItems().size() > 0) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
         assertEquals(24, solutions.size());
-        assertEquals(40.82f, solutions.get(0).percentageContainerVolumeUsed, 0.01);
+        assertEquals(40.82f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerYItemNone() {
@@ -119,13 +119,13 @@ public class IsoPalletTest extends TestCase {
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (solution.getRemainingItems().size() > 0) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
         assertEquals(24, solutions.size());
-        assertEquals(38.2f, solutions.get(0).percentageContainerVolumeUsed, 0.01);
+        assertEquals(38.2f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerNoneItemY() {
@@ -142,13 +142,13 @@ public class IsoPalletTest extends TestCase {
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (solution.getRemainingItems().size() > 0) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
         assertEquals(24, solutions.size());
-        assertEquals(40.82f, solutions.get(0).percentageContainerVolumeUsed, 0.01);
+        assertEquals(40.82f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerNoneItemNone() {
@@ -165,12 +165,12 @@ public class IsoPalletTest extends TestCase {
         ISimulation<Container, Item> simulator = new AirForceBinPacking();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (solution.getRemainingItems().size() > 0) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
         assertEquals(24, solutions.size());
-        assertEquals(38.2f, solutions.get(0).percentageContainerVolumeUsed, 0.01);
+        assertEquals(38.2f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 }

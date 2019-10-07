@@ -39,8 +39,8 @@ public class PackingService {
         List<Solution> solutions = new ArrayList<>();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
-        while (!solution.remainingItems.isEmpty()) {
-            solution = simulator.simulate(container, solution.remainingItems);
+        while (!solution.getRemainingItems().isEmpty()) {
+            solution = simulator.simulate(container, solution.getRemainingItems());
             solutions.add(solution);
         }
 
@@ -65,11 +65,11 @@ public class PackingService {
             if (!remaining.isEmpty()) {
                 Solution solution = simulator.simulate(container, remaining);
                 solutions.add(solution);
-                if (solution.completePacking) {
+                if (solution.isCompletePacking()) {
                     remaining.clear();
                     break;
                 }
-                remaining = new ArrayList<>(solution.remainingItems);
+                remaining = new ArrayList<>(solution.getRemainingItems());
             }
         }
 

@@ -11,51 +11,51 @@ public class ScrapPad {
   /**
    * Previous entry.
    */
-  public ScrapPad left;
+  private ScrapPad previous;
   /**
    * Following entry.
    */
-  public ScrapPad right;
+  private ScrapPad next;
 
   /**
    * X coordinate of the gap's right corner.
    */
-  public long gapX;
+  private long gapX;
   /**
    * Z coordinate of the gap's right corner.
    */
-  public long gapZ;
+  private long gapZ;
 
   public enum Situation {
     EMPTY, ONLY_LEFT_BOX, ONLY_RIGHT_BOX, EQUAL_SIDES, DIFFERENT_SIDES
   }
 
   public ScrapPad() {
-    this.left = null;
-    this.right = null;
+    this.previous = null;
+    this.next = null;
   }
 
-  public ScrapPad(ScrapPad left, ScrapPad right) {
-    this.left = left;
-    this.right = right;
+  public ScrapPad(ScrapPad previous, ScrapPad next) {
+    this.previous = previous;
+    this.next = next;
   }
 
-  public ScrapPad(ScrapPad left, ScrapPad right, long gapX, long gapZ) {
-    this.left = left;
-    this.right = right;
+  public ScrapPad(ScrapPad previous, ScrapPad next, long gapX, long gapZ) {
+    this.previous = previous;
+    this.next = next;
     this.gapX = gapX;
     this.gapZ = gapZ;
   }
 
   public Situation isSituation() {
     Situation ret;
-    if (this.left == null && this.right == null) {
+    if (this.previous == null && this.next == null) {
       ret = Situation.EMPTY;
-    } else if (this.left == null) {
+    } else if (this.previous == null) {
       ret = Situation.ONLY_RIGHT_BOX;
-    } else if (this.right == null) {
+    } else if (this.next == null) {
       ret = Situation.ONLY_LEFT_BOX;
-    } else if (this.left.gapZ == this.right.gapZ) {
+    } else if (this.previous.gapZ == this.next.gapZ) {
       ret = Situation.EQUAL_SIDES;
     } else {
       ret = Situation.DIFFERENT_SIDES;
@@ -64,14 +64,43 @@ public class ScrapPad {
   }
 
   public boolean noBoxes() {
-    return this.left == null && this.right == null;
+    return this.previous == null && this.next == null;
   }
 
-  public boolean boxOnlyAtRight() {
-    return this.left == null && this.right != null;
+  public void updateGaps(long gapX, long gapZ) {
+    this.gapX = gapX;
+    this.gapZ = gapZ;
   }
 
-  public boolean boxOnlyAtLeft() {
-    return this.left != null && this.right == null;
+  public ScrapPad getPrevious() {
+    return previous;
+  }
+
+  public void setPrevious(ScrapPad previous) {
+    this.previous = previous;
+  }
+
+  public ScrapPad getNext() {
+    return next;
+  }
+
+  public void setNext(ScrapPad next) {
+    this.next = next;
+  }
+
+  public long getGapX() {
+    return gapX;
+  }
+
+  public void setGapX(long gapX) {
+    this.gapX = gapX;
+  }
+
+  public long getGapZ() {
+    return gapZ;
+  }
+
+  public void setGapZ(long gapZ) {
+    this.gapZ = gapZ;
   }
 }

@@ -8,11 +8,11 @@ public class Layer implements Comparable<Layer> {
   /**
    * A weight value for the layer.
    */
-  public double weight;
+  private double weight;
   /**
    * The thickness of the layer.
    */
-  public long dimension;
+  private long dimension;
 
 
   public Layer(double weight, long dimension) {
@@ -30,4 +30,13 @@ public class Layer implements Comparable<Layer> {
       return 1;
     }
   }
+
+  public double getWeight() {
+    return weight;
+  }
+
+  public long getDimension() {
+    return dimension;
+  }
+
 }

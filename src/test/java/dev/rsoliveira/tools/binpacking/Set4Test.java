@@ -1,20 +1,14 @@
 package dev.rsoliveira.tools.binpacking;
 
-import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.ItemRotation;
-import dev.rsoliveira.tools.binpacking.domain.Solution;
-import dev.rsoliveira.tools.binpacking.simulation.AirForceBinPacking;
-import dev.rsoliveira.tools.binpacking.simulation.ISimulation;
-import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Set4Test extends TestCase {
+public class Set4Test extends SetAbstractTest {
 
-    public void testSet4() {
-        Container container = new Container(1, 104, 96, 84, ItemRotation.FULL);
+    public Set4Test() {
         List<Item> items = new ArrayList<>();
 
         // set4: 1493 items; 21 types; 96.4% full
@@ -40,16 +34,7 @@ public class Set4Test extends TestCase {
         items.add(new Item(20, "20", 9, 18, 15, 50, ItemRotation.FULL));
         items.add(new Item(21, "21", 6, 9, 14, 1, ItemRotation.FULL));
 
-        List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
-        Solution solution = simulator.simulate(container, items);
-        solutions.add(solution);
-        while (solution.remainingItems.size() > 0) {
-            solution = simulator.simulate(container, solution.remainingItems);
-            solutions.add(solution);
-        }
-
-        assertEquals(2, solutions.size());
-        assertEquals(96.38f, solutions.get(0).percentageContainerVolumeUsed, 0.01);
+        this.setItems(items);
+        this.setContainerVolumeUsed(96.38);
     }
 }

@@ -78,7 +78,7 @@ public abstract class BischofRatcliffAbstractText {
         List<Solution> solutions1 = PackingService.getInstance().simulate(container, items);
 
         assertEquals(2, solutions1.size());
-        assertEquals(containerVolume, solutions1.get(0).percentageContainerVolumeUsed, 0.01);
-        assertEquals(itemsVolume, solutions1.get(0).percentagePackedBox, 0.01);
+        assertEquals(containerVolume, solutions1.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(itemsVolume, solutions1.get(0).getPercentagePackedItemsVolume(), 0.01);
     }
 }
