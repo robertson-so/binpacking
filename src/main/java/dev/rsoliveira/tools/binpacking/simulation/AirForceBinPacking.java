@@ -2,10 +2,7 @@ package dev.rsoliveira.tools.binpacking.simulation;
 
 import dev.rsoliveira.tools.binpacking.domain.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * A 3D bin packing simulation that uses a human heuristic to perform the packing.
@@ -90,7 +87,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
             totalItemsToPack += item.getQuantity();
             for (; index < totalItemsToPack; index++) {
                 itemsToPack[index] = (new Item(index + 1, item.getCode(),
-                        item.getDimension1(), item.getDimension2(), item.getDimension3(), 1,
+                        item.getDimension1(), item.getDimension2(), item.getDimension3(), item.getQuantity(),
                         item.getRotation()));
             }
         }
@@ -565,27 +562,33 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
         boxNotfittingIndex = -1;
         for (int y = 0; y < itemsToPack.length; y += itemsToPack[y].getQuantity()) {
             int index;
-            for (index = y; index < index + (itemsToPack[y].getQuantity() - 1); index++) {
-                if (!itemsToPack[index].isPacked()) {
+            for (index = y; index < (index + itemsToPack[y].getQuantity()) - 1; index++) {
+                if (index == (itemsToPack.length - 1) || !itemsToPack[index].isPacked()) {
                     break;
                 }
             }
             if (itemsToPack[index].isPacked()) {
                 continue;
             }
-            analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ, itemsToPack[index].getDimension1(), itemsToPack[index].getDimension2(), itemsToPack[index].getDimension3());
+            analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
+                    itemsToPack[index].getDimension1(), itemsToPack[index].getDimension2(), itemsToPack[index].getDimension3());
             // cubes need to be analyzed only one time
             if (itemsToPack[index].isCubic()) {
                 continue;
             }
             if (ItemRotation.FULL.equals(itemsToPack[index].getRotation())) {
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ, itemsToPack[index].getDimension1(), itemsToPack[index].getDimension3(), itemsToPack[index].getDimension2());
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ, itemsToPack[index].getDimension2(), itemsToPack[index].getDimension1(), itemsToPack[index].getDimension3());
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ, itemsToPack[index].getDimension2(), itemsToPack[index].getDimension3(), itemsToPack[index].getDimension1());
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ, itemsToPack[index].getDimension3(), itemsToPack[index].getDimension1(), itemsToPack[index].getDimension2());
+                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
+                        itemsToPack[index].getDimension1(), itemsToPack[index].getDimension3(), itemsToPack[index].getDimension2());
+                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
+                        itemsToPack[index].getDimension2(), itemsToPack[index].getDimension1(), itemsToPack[index].getDimension3());
+                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
+                        itemsToPack[index].getDimension2(), itemsToPack[index].getDimension3(), itemsToPack[index].getDimension1());
+                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
+                        itemsToPack[index].getDimension3(), itemsToPack[index].getDimension1(), itemsToPack[index].getDimension2());
             }
             if (ItemRotation.FULL.equals(itemsToPack[index].getRotation()) || ItemRotation.HORIZONTAL.equals(itemsToPack[index].getRotation())) {
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ, itemsToPack[index].getDimension3(), itemsToPack[index].getDimension2(), itemsToPack[index].getDimension1());
+                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
+                        itemsToPack[index].getDimension3(), itemsToPack[index].getDimension2(), itemsToPack[index].getDimension1());
             }
         }
     }
@@ -767,24 +770,19 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 break;
         }
 
-        double percentagepackedbox = bestVolume * 100 / totalItemVolume;
-        percentageUsed = bestVolume * 100 / totalContainerVolume;
         long prepackedy;
         long preremainpy;
-        long packedy;
+        long packedy = 0;
 
         listCandidateLayers();
         Collections.sort(layers);
         packedVolume = 0.0;
-        packedy = 0;
         packing = true;
         layerThickness = layers.get(bestIteration).getDimension();
         maxAvailableThickness = containerY;
         remainpz = containerZ;
 
-        for (Item item : itemsToPack) {
-            item.reset();
-        }
+        Arrays.stream(itemsToPack).forEach(item -> item.reset());
 
         do {
             layerInLayer = 0;

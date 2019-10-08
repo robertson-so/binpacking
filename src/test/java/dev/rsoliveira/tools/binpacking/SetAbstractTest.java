@@ -32,7 +32,6 @@ public abstract class SetAbstractTest {
             solutions.add(solution);
         }
 
-        //assertEquals(2, solutions.size());
         assertEquals(containerVolumeUsed, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
