@@ -96,11 +96,19 @@ public class ScrapPad {
     this.gapX = gapX;
   }
 
+  public void incrementGapX(long toIncrement) {
+    this.gapX += toIncrement;
+  }
+
   public long getGapZ() {
     return gapZ;
   }
 
   public void setGapZ(long gapZ) {
     this.gapZ = gapZ;
+  }
+
+  public void incrementGapZ(long toIncrement) {
+    this.gapZ += toIncrement;
   }
 }

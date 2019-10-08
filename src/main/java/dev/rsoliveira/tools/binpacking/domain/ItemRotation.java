@@ -2,12 +2,12 @@ package dev.rsoliveira.tools.binpacking.domain;
 
 /**
  * Rotations:
- * xyz
- * xzy
- * yxz
- * yzx
- * zxy
- * zyx
+ * xyz - height is represented by y
+ * zyx - height is represented by y
+ * zxy - height is represented by x
+ * yxz - height is represented by x
+ * xzy - height is represented by z
+ * yzx - height is represented by z
  *
  * faces:
  * xy

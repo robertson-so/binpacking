@@ -78,8 +78,8 @@ public class IsoPalletTest extends TestCase {
             solutions.add(solution);
         }
 
-        assertEquals(16, solutions.size());
-        assertEquals(45.55f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(2, solutions.size());
+        assertEquals(58.56f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerYItemY() {
@@ -101,8 +101,8 @@ public class IsoPalletTest extends TestCase {
             solutions.add(solution);
         }
 
-        assertEquals(24, solutions.size());
-        assertEquals(40.82f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(6, solutions.size());
+        assertEquals(47.33f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerYItemNone() {
@@ -124,8 +124,8 @@ public class IsoPalletTest extends TestCase {
             solutions.add(solution);
         }
 
-        assertEquals(24, solutions.size());
-        assertEquals(38.2f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(5, solutions.size());
+        assertEquals(42.34f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerNoneItemY() {
@@ -147,8 +147,8 @@ public class IsoPalletTest extends TestCase {
             solutions.add(solution);
         }
 
-        assertEquals(24, solutions.size());
-        assertEquals(40.82f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(6, solutions.size());
+        assertEquals(46.73f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerNoneItemNone() {
@@ -170,7 +170,7 @@ public class IsoPalletTest extends TestCase {
             solutions.add(solution);
         }
 
-        assertEquals(24, solutions.size());
-        assertEquals(38.2f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(5, solutions.size());
+        assertEquals(42.34f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 }

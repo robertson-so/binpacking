@@ -161,7 +161,6 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
             }
 
             listCandidateLayers();
-            Collections.sort(layers);
 
             for (int layersindex = 0; layersindex < layers.size(); layersindex++) {
                 packedVolume = 0.0;
@@ -172,7 +171,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 remainpz = containerZ;
                 packedItemCounter = 0;
 
-                Arrays.stream(itemsToPack).forEach(it -> it.reset());
+                for (int i = 0; i < itemsToPack.length; i++) itemsToPack[i].reset();
 
                 do {
                     layerInLayer = 0;
@@ -272,6 +271,8 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 layers.add(new Layer(weight, examinedDimension));
             }
         }
+
+        Collections.sort(layers);
     }
 
     /**
@@ -334,13 +335,13 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
 
             long newPositionY = packedy;
             long newPositionZ = smallestZ.getGapZ();
-            // calculating x-position for the item and updating the smallest z, based on the
+            // calculating x-position for the item and updating the smallest z, based on the smallest-z
             switch (smallestZ.isSituation()) {
                 case EMPTY: {
                     newPositionX = 0;
 
                     if (checkedBoxX == smallestZ.getGapX()) {
-                        smallestZ.setGapZ(smallestZ.getGapZ() + checkedBoxZ);
+                        smallestZ.incrementGapZ(checkedBoxZ);
                     } else {
                         smallestZ.setNext(new ScrapPad(smallestZ, null, smallestZ.getGapX(), smallestZ.getGapZ()));
                         smallestZ.updateGaps(checkedBoxX, smallestZ.getGapZ() + checkedBoxZ);
@@ -358,12 +359,12 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                                 smallestZ.getNext().setPrevious(smallestZ);
                             }
                         } else {
-                            smallestZ.setGapZ(smallestZ.getGapZ() + checkedBoxZ);
+                            smallestZ.incrementGapZ(checkedBoxZ);
                         }
                     } else {
                         newPositionX = smallestZ.getGapX() - checkedBoxX;
                         if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getNext().getGapZ()) {
-                            smallestZ.setGapX(smallestZ.getGapX() - checkedBoxX);
+                            smallestZ.incrementGapX(-checkedBoxX);
                         } else {
                             smallestZ.getNext().setPrevious(new ScrapPad(smallestZ, smallestZ.getNext()));
                             smallestZ.setNext(smallestZ.getNext().getPrevious());
@@ -382,11 +383,11 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                             smallestZ.getPrevious().setGapX(smallestZ.getGapX());
                             smallestZ.getPrevious().setNext(null);
                         } else {
-                            smallestZ.setGapZ(smallestZ.getGapZ() + checkedBoxZ);
+                            smallestZ.incrementGapZ(checkedBoxZ);
                         }
                     } else {
                         if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
-                            smallestZ.getPrevious().setGapX(smallestZ.getPrevious().getGapX() + checkedBoxX);
+                            smallestZ.getPrevious().incrementGapX(checkedBoxX);
                         } else {
                             smallestZ.getPrevious().setNext(new ScrapPad(smallestZ.getPrevious(), smallestZ));
                             smallestZ.setPrevious(smallestZ.getPrevious().getNext());
@@ -410,11 +411,11 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                                 smallestZ.getPrevious().setNext(null);
                             }
                         } else {
-                            smallestZ.setGapZ(smallestZ.getGapZ() + checkedBoxZ);
+                            smallestZ.incrementGapZ(checkedBoxZ);
                         }
                     } else if (smallestZ.getPrevious().getGapX() < containerX - smallestZ.getGapX()) {
                         if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
-                            smallestZ.setGapX(smallestZ.getGapX() - checkedBoxX);
+                            smallestZ.incrementGapX(-checkedBoxX);
                             newPositionX = smallestZ.getGapX() - checkedBoxX;
                         } else {
                             smallestZ.getPrevious().setNext(new ScrapPad(smallestZ.getPrevious(), smallestZ));
@@ -432,7 +433,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                             smallestZ.getNext().setPrevious(new ScrapPad(smallestZ, smallestZ.getNext()));
                             smallestZ.setNext(smallestZ.getNext().getPrevious());
                             smallestZ.getNext().updateGaps(smallestZ.getGapX(), smallestZ.getGapZ() + checkedBoxZ);
-                            smallestZ.setGapX(smallestZ.getGapX() - checkedBoxX);
+                            smallestZ.incrementGapX(-checkedBoxX);
                         }
                     }
                     break;
@@ -446,14 +447,14 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                             smallestZ.getPrevious().setNext(smallestZ.getNext());
                             smallestZ.getNext().setPrevious(smallestZ.getPrevious());
                         } else {
-                            smallestZ.setGapZ(smallestZ.getGapZ() + checkedBoxZ);
+                            smallestZ.incrementGapZ(checkedBoxZ);
                         }
                     } else {
                         if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
-                            smallestZ.getPrevious().setGapX(smallestZ.getPrevious().getGapX() + checkedBoxX);
+                            smallestZ.getPrevious().incrementGapX(checkedBoxX);
                         } else if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getNext().getGapZ()) {
                             newPositionX = smallestZ.getGapX() - checkedBoxX;
-                            smallestZ.setGapX(smallestZ.getGapX() - checkedBoxX);
+                            smallestZ.incrementGapX(-checkedBoxX);
                         } else {
                             smallestZ.getPrevious().setNext(new ScrapPad(smallestZ.getPrevious(), smallestZ));
                             smallestZ.setPrevious(smallestZ.getPrevious().getNext());
@@ -485,14 +486,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 continue;
             }
 
-            int rotations;
-            switch (itemsToPack[x].getRotation()) {
-                case FULL: rotations = 3; break;
-                case HORIZONTAL:
-                case NONE:
-                default: rotations = 1; break;
-            }
-            for (int y = 1; y <= rotations; y++) {
+            for (int y = 1; y <= 3; y++) {
                 switch (y) {
                     case 2:
                         examinedDimension = itemsToPack[x].getDimension2();
@@ -775,7 +769,6 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
         long packedy = 0;
 
         listCandidateLayers();
-        Collections.sort(layers);
         packedVolume = 0.0;
         packing = true;
         layerThickness = layers.get(bestIteration).getDimension();
