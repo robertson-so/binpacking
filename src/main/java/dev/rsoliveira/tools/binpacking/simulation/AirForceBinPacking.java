@@ -18,8 +18,10 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     private boolean packing;
     private boolean layerDone;
     private boolean evenedLayer;
-    private int bestVariant;
     private boolean hundredPercentPacked;
+
+    private int bestVariant;
+    private int bestIteration;
 
     private long boxX, boxY, boxZ;
     private int boxFittingIndex;
@@ -29,14 +31,13 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     private int checkedBoxIndex;
     private long boxFittingX, boxFittingY, boxFittingZ;
     private long boxNotFittingX, boxNotFittingY, botNotFittingZ;
-    private long containerX, containerY, containerZ;
 
     private long layerInLayer;
     private long preLayer;
     private long layerInLayerZ;
-    private long maxAvailableThickness, remainpz;
+    private long maxAvailableThickness;
+    private long remainpz;
     private long layerThickness;
-    private int bestIteration;
     private long packedItemCounter;
     private long bestPackedTotal;
 
@@ -48,8 +49,6 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
 
     private List<Item> inputItems;
     private Item[] itemsToPack;
-
-    private List<Layer> layers = new ArrayList<>();
 
     private ScrapPad scrapFirst;
 
@@ -63,26 +62,24 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     public Solution simulate(Container container, List<Item> volumes) {
         initialize(container, volumes);
         iterate(container);
-        Solution solution = report(container);
-
-        return solution;
+        return report(container);
     }
 
     private void initialize(Container container, List<Item> items) {
-        long totalItemsToPack = 0;
-
-        layers = new ArrayList<>();
-        layers.add(new Layer(-1, 0));
-
         inputItems = items;
+
+        totalContainerVolume = container.getVolume();
+        totalItemVolume = 0.0;
         int total = 0;
         for (Item item : items) {
             total += item.getQuantity();
+            totalItemVolume += (item.getVolume() * item.getQuantity());
         }
         itemsToPack = new Item[total];
 
         // creates all necessary items, based on the items' configuration
         int index = 0;
+        long totalItemsToPack = 0;
         for (Item item : items) {
             totalItemsToPack += item.getQuantity();
             for (; index < totalItemsToPack; index++) {
@@ -90,12 +87,6 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                         item.getDimension1(), item.getDimension2(), item.getDimension3(), item.getQuantity(),
                         item.getRotation()));
             }
-        }
-
-        totalContainerVolume = container.getVolume();
-        totalItemVolume = 0.0;
-        for (Item item : itemsToPack) {
-            totalItemVolume += item.getVolume();
         }
 
         scrapFirst = new ScrapPad();
@@ -127,58 +118,29 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
         }
 
         for (int containerOrientation = 1; containerOrientation <= maxContainerOrientation; containerOrientation++) {
-            switch (containerOrientation) {
-                case 2:
-                    containerX = container.getDimension3();
-                    containerY = container.getDimension2();
-                    containerZ = container.getDimension1();
-                    break;
-                case 3:
-                    containerX = container.getDimension3();
-                    containerY = container.getDimension1();
-                    containerZ = container.getDimension2();
-                    break;
-                case 4:
-                    containerX = container.getDimension2();
-                    containerY = container.getDimension1();
-                    containerZ = container.getDimension3();
-                    break;
-                case 5:
-                    containerX = container.getDimension1();
-                    containerY = container.getDimension3();
-                    containerZ = container.getDimension2();
-                    break;
-                case 6:
-                    containerX = container.getDimension2();
-                    containerY = container.getDimension3();
-                    containerZ = container.getDimension1();
-                    break;
-                default:
-                    containerX = container.getDimension1();
-                    containerY = container.getDimension2();
-                    containerZ = container.getDimension3();
-                    break;
-            }
+            Volume orientation = container.atOrientation(containerOrientation);
 
-            listCandidateLayers();
+            List<Layer> layers = listCandidateLayers(orientation);
 
             for (int layersindex = 0; layersindex < layers.size(); layersindex++) {
                 packedVolume = 0.0;
                 packedy = 0;
                 packing = true;
                 layerThickness = layers.get(layersindex).getDimension();
-                maxAvailableThickness = containerY;
-                remainpz = containerZ;
+                maxAvailableThickness = orientation.getDimension2();
+                remainpz = orientation.getDimension3();
                 packedItemCounter = 0;
 
-                for (int i = 0; i < itemsToPack.length; i++) itemsToPack[i].reset();
+                for (int i = 0; i < itemsToPack.length; i++) {
+                    itemsToPack[i].reset();
+                }
 
                 do {
                     layerInLayer = 0;
                     layerDone = false;
-                    packLayer(packedy);
+                    packLayer(orientation, packedy);
                     packedy += layerThickness;
-                    maxAvailableThickness = containerY - packedy;
+                    maxAvailableThickness = orientation.getDimension2() - packedy;
                     if (layerInLayer != 0) {
                         prepackedy = packedy;
                         preremainpy = maxAvailableThickness;
@@ -187,12 +149,12 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                         remainpz = layerInLayerZ;
                         layerThickness = layerInLayer;
                         layerDone = false;
-                        packLayer(packedy);
+                        packLayer(orientation, packedy);
                         packedy = prepackedy;
                         maxAvailableThickness = preremainpy;
-                        remainpz = containerZ;
+                        remainpz = orientation.getDimension3();
                     }
-                    findLayer(maxAvailableThickness);
+                    findLayer(orientation, maxAvailableThickness);
                 }
                 while (packing);
 
@@ -220,33 +182,45 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     /**
      * Lists all possible layer heights, giving a weight value to each layer.
      */
-    private void listCandidateLayers() {
+    private List<Layer> listCandidateLayers(Volume orientation) {
         boolean same;
         long examinedDimension, dimdif, dimension2, dimension3;
         double weight;
 
-        for (Item item : itemsToPack) {
-            for (int y = 1; y <= 3; y++) {
+        List<Layer> layers = new ArrayList<>();
+        layers.add(new Layer(-1, 0));
+
+        for (Item item : inputItems) {
+            int max;
+            switch (item.getRotation()) {
+                case FULL: max = 3; break;
+                case HORIZONTAL: max = 2; break;
+                default: max = 1; break;
+            }
+            for (int y = 1; y <= max; y++) {
                 switch (y) {
                     case 2:
+                        // face down = yz
                         examinedDimension = item.getDimension2();
                         dimension2 = item.getDimension1();
                         dimension3 = item.getDimension3();
                         break;
                     case 3:
+                        // face down = zy
                         examinedDimension = item.getDimension3();
                         dimension2 = item.getDimension1();
                         dimension3 = item.getDimension2();
                         break;
                     default:
+                        // face down = xz
                         examinedDimension = item.getDimension1();
                         dimension2 = item.getDimension2();
                         dimension3 = item.getDimension3();
                         break;
                 }
-                if ((examinedDimension > containerY) ||
-                    (((dimension2 > containerX) || (dimension3 > containerZ)) &&
-                     ((dimension3 > containerX) || (dimension2 > containerZ)))) {
+                if ((examinedDimension > orientation.getDimension2()) ||
+                    (((dimension2 > orientation.getDimension1()) || (dimension3 > orientation.getDimension3())) &&
+                     ((dimension3 > orientation.getDimension1()) || (dimension2 > orientation.getDimension3())))) {
                     continue;
                 }
 
@@ -256,7 +230,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 }
 
                 weight = 0;
-                for (Item item2 : itemsToPack) {
+                for (Item item2 : inputItems) {
                     if (item.getId() == item2.getId()) continue;
 
                     dimdif = Math.abs(examinedDimension - item2.getDimension1());
@@ -273,12 +247,13 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
         }
 
         Collections.sort(layers);
+        return layers;
     }
 
     /**
      * Packes the boxes found and arranges all variables and records properly.
      */
-    private void packLayer(long packedy) {
+    private void packLayer(Volume orientation, long packedy) {
         long gapLengthX, gapLengthZ, maxGapZ;
         long newPositionX;
         ScrapPad smallestZ;
@@ -288,7 +263,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
             return;
         }
 
-        scrapFirst.updateGaps(containerX, 0);
+        scrapFirst.updateGaps(orientation.getDimension1(), 0);
 
         while (true) {
             smallestZ = findSmallestZ();
@@ -413,7 +388,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                         } else {
                             smallestZ.incrementGapZ(checkedBoxZ);
                         }
-                    } else if (smallestZ.getPrevious().getGapX() < containerX - smallestZ.getGapX()) {
+                    } else if (smallestZ.getPrevious().getGapX() < orientation.getDimension1() - smallestZ.getGapX()) {
                         if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
                             smallestZ.incrementGapX(-checkedBoxX);
                             newPositionX = smallestZ.getGapX() - checkedBoxX;
@@ -477,7 +452,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
      *
      * @param thickness the layer thickness.
      */
-    private void findLayer(double thickness) {
+    private void findLayer(Volume orientation, double thickness) {
         long examinedDimension, dimdif, dimension2, dimension3;
         double layereval, eval = 1000000;
         layerThickness = 0;
@@ -486,7 +461,13 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 continue;
             }
 
-            for (int y = 1; y <= 3; y++) {
+            int max;
+            switch (itemsToPack[x].getRotation()) {
+                case FULL: max = 3; break;
+                case HORIZONTAL: max = 2; break;
+                default: max = 1; break;
+            }
+            for (int y = 1; y <= max; y++) {
                 switch (y) {
                     case 2:
                         examinedDimension = itemsToPack[x].getDimension2();
@@ -505,8 +486,8 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                         break;
                 }
                 layereval = 0;
-                if ((examinedDimension <= thickness) && (((dimension2 <= containerX) && (dimension3 <= containerZ)) ||
-                    ((dimension3 <= containerX) && (dimension2 <= containerZ)))) {
+                if ((examinedDimension <= thickness) && (((dimension2 <= orientation.getDimension1()) && (dimension3 <= orientation.getDimension3())) ||
+                    ((dimension3 <= orientation.getDimension1()) && (dimension2 <= orientation.getDimension3())))) {
                     for (int z = 0; z < itemsToPack.length; z++) {
                         if (itemsToPack[z].isPacked()) {
                             continue;
@@ -663,7 +644,8 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
             checkedBoxY = boxY;
             checkedBoxZ = boxZ;
         } else {
-            if ((boxNotfittingIndex > -1) && (layerInLayer != 0 || smallestZ.noBoxes())) {
+            if ((boxNotfittingIndex > -1) &&
+                (layerInLayer != 0 || smallestZ.isSituation().equals(ScrapPad.Situation.EMPTY))) {
                 if (layerInLayer == 0) {
                     preLayer = layerThickness;
                     layerInLayerZ = smallestZ.getGapZ();
@@ -731,58 +713,29 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     }
 
     private Solution report(Container container) {
-        switch (bestVariant) {
-            case 2:
-                containerX = container.getDimension3();
-                containerY = container.getDimension2();
-                containerZ = container.getDimension1();
-                break;
-            case 3:
-                containerX = container.getDimension3();
-                containerY = container.getDimension1();
-                containerZ = container.getDimension2();
-                break;
-            case 4:
-                containerX = container.getDimension2();
-                containerY = container.getDimension1();
-                containerZ = container.getDimension3();
-                break;
-            case 5:
-                containerX = container.getDimension1();
-                containerY = container.getDimension3();
-                containerZ = container.getDimension2();
-                break;
-            case 6:
-                containerX = container.getDimension2();
-                containerY = container.getDimension3();
-                containerZ = container.getDimension1();
-                break;
-            default:
-                containerX = container.getDimension1();
-                containerY = container.getDimension2();
-                containerZ = container.getDimension3();
-                break;
-        }
-
         long prepackedy;
         long preremainpy;
         long packedy = 0;
 
-        listCandidateLayers();
+        Volume orientation = container.atOrientation(bestVariant);
+        List<Layer> layers = listCandidateLayers(orientation);
+
         packedVolume = 0.0;
         packing = true;
         layerThickness = layers.get(bestIteration).getDimension();
-        maxAvailableThickness = containerY;
-        remainpz = containerZ;
+        maxAvailableThickness = orientation.getDimension2();
+        remainpz = orientation.getDimension3();
 
-        Arrays.stream(itemsToPack).forEach(item -> item.reset());
+        for (Item item : itemsToPack) {
+            item.reset();
+        }
 
         do {
             layerInLayer = 0;
             layerDone = false;
-            packLayer(packedy);
+            packLayer(orientation, packedy);
             packedy += layerThickness;
-            maxAvailableThickness = containerY - packedy;
+            maxAvailableThickness = orientation.getDimension2() - packedy;
             if (layerInLayer != 0) {
                 prepackedy = packedy;
                 preremainpy = maxAvailableThickness;
@@ -791,18 +744,18 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 remainpz = layerInLayerZ;
                 layerThickness = layerInLayer;
                 layerDone = false;
-                packLayer(packedy);
+                packLayer(orientation, packedy);
                 packedy = prepackedy;
                 maxAvailableThickness = preremainpy;
-                remainpz = containerZ;
+                remainpz = orientation.getDimension3();
             }
-            findLayer(maxAvailableThickness);
+            findLayer(orientation, maxAvailableThickness);
         } while (packing);
 
         Solution solution = new Solution(
                 new ArrayList<>(inputItems),
                 Arrays.asList(itemsToPack),
-                new Container(container.getId(), containerX, containerY, containerZ, container.getRotation()),
+                orientation,
                 bestVolume);
 
         return solution;

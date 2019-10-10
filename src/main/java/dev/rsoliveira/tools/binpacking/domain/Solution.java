@@ -18,9 +18,9 @@ public class Solution {
   private List<Item> inputItems;
   private List<Item> remainingItems;
 
-  private Container containerOrientation;
+  private Volume containerOrientation;
 
-  public Solution(List<Item> inputItems, List<Item> resultItems, Container containerOrientation, double bestVolume) {
+  public Solution(List<Item> inputItems, List<Item> resultItems, Volume containerOrientation, double bestVolume) {
     this.inputItems = inputItems;
     this.containerOrientation = containerOrientation;
     this.bestSolutionVolume = bestVolume;
@@ -95,7 +95,7 @@ public class Solution {
     return inputItems;
   }
 
-  public Container getContainerOrientation() {
+  public Volume getContainerOrientation() {
     return containerOrientation;
   }
 

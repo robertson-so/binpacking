@@ -63,10 +63,6 @@ public class ScrapPad {
     return ret;
   }
 
-  public boolean noBoxes() {
-    return this.previous == null && this.next == null;
-  }
-
   public void updateGaps(long gapX, long gapZ) {
     this.gapX = gapX;
     this.gapZ = gapZ;

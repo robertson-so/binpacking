@@ -33,7 +33,7 @@ public class IsoPalletTest extends TestCase {
         }
 
         assertEquals(1, solutions.size());
-        assertTrue(solutions.get(0).getPercentageContainerVolumeUsed() > 81f);
+        assertEquals(81.03f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerYItemFull() {
@@ -56,7 +56,7 @@ public class IsoPalletTest extends TestCase {
         }
 
         assertEquals(2, solutions.size());
-        assertTrue(solutions.get(0).getPercentageContainerVolumeUsed() > 73.3f);
+        assertEquals(73.34f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerFullItemY() {
@@ -124,8 +124,8 @@ public class IsoPalletTest extends TestCase {
             solutions.add(solution);
         }
 
-        assertEquals(5, solutions.size());
-        assertEquals(42.34f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(36, solutions.size());
+        assertEquals(35.48f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 
     public void testPallet1ContainerNoneItemY() {
@@ -170,7 +170,7 @@ public class IsoPalletTest extends TestCase {
             solutions.add(solution);
         }
 
-        assertEquals(5, solutions.size());
-        assertEquals(42.34f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
+        assertEquals(36, solutions.size());
+        assertEquals(33.21f, solutions.get(0).getPercentageContainerVolumeUsed(), 0.01);
     }
 }
