@@ -4,7 +4,7 @@ import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.ItemRotation;
 import dev.rsoliveira.tools.binpacking.domain.Solution;
-import dev.rsoliveira.tools.binpacking.simulation.AirForceBinPacking;
+import dev.rsoliveira.tools.binpacking.simulation.PalletPackingSimulation;
 import dev.rsoliveira.tools.binpacking.simulation.ISimulation;
 import junit.framework.TestCase;
 
@@ -24,7 +24,7 @@ public class IsoPalletTest extends TestCase {
         items.add(new Item(5, "5", 6, 17, 8, 6, ItemRotation.FULL));
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {
@@ -47,7 +47,7 @@ public class IsoPalletTest extends TestCase {
         items.add(new Item(5, "5", 6, 17, 8, 6, ItemRotation.FULL));
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {
@@ -70,7 +70,7 @@ public class IsoPalletTest extends TestCase {
         items.add(new Item(5, "5", 6, 17, 8, 6, ItemRotation.HORIZONTAL));
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {
@@ -93,7 +93,7 @@ public class IsoPalletTest extends TestCase {
         items.add(new Item(5, "5", 6, 17, 8, 6, ItemRotation.HORIZONTAL));
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {
@@ -116,7 +116,7 @@ public class IsoPalletTest extends TestCase {
         items.add(new Item(5, "5", 6, 17, 8, 6, ItemRotation.NONE));
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {
@@ -139,7 +139,7 @@ public class IsoPalletTest extends TestCase {
         items.add(new Item(5, "5", 6, 17, 8, 6, ItemRotation.HORIZONTAL));
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {
@@ -162,7 +162,7 @@ public class IsoPalletTest extends TestCase {
         items.add(new Item(5, "5", 6, 17, 8, 6, ItemRotation.NONE));
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {

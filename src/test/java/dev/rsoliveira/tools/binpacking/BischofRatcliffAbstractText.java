@@ -5,10 +5,7 @@ import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.ItemRotation;
 import dev.rsoliveira.tools.binpacking.domain.Solution;
 import dev.rsoliveira.tools.binpacking.service.PackingService;
-import dev.rsoliveira.tools.binpacking.simulation.AirForceBinPacking;
-import dev.rsoliveira.tools.binpacking.simulation.ISimulation;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

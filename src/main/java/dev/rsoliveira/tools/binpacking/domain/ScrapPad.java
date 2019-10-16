@@ -8,103 +8,103 @@ package dev.rsoliveira.tools.binpacking.domain;
  */
 public class ScrapPad {
 
-  /**
-   * Previous entry.
-   */
-  private ScrapPad previous;
-  /**
-   * Following entry.
-   */
-  private ScrapPad next;
+    /**
+     * Previous entry.
+     */
+    private ScrapPad previous;
+    /**
+     * Following entry.
+     */
+    private ScrapPad next;
 
-  /**
-   * X coordinate of the gap's right corner.
-   */
-  private long gapX;
-  /**
-   * Z coordinate of the gap's right corner.
-   */
-  private long gapZ;
+    /**
+     * X coordinate of the gap's right corner.
+     */
+    private long gapX;
+    /**
+     * Z coordinate of the gap's right corner.
+     */
+    private long gapZ;
 
-  public enum Situation {
-    EMPTY, ONLY_LEFT_BOX, ONLY_RIGHT_BOX, EQUAL_SIDES, DIFFERENT_SIDES
-  }
-
-  public ScrapPad() {
-    this.previous = null;
-    this.next = null;
-  }
-
-  public ScrapPad(ScrapPad previous, ScrapPad next) {
-    this.previous = previous;
-    this.next = next;
-  }
-
-  public ScrapPad(ScrapPad previous, ScrapPad next, long gapX, long gapZ) {
-    this.previous = previous;
-    this.next = next;
-    this.gapX = gapX;
-    this.gapZ = gapZ;
-  }
-
-  public Situation isSituation() {
-    Situation ret;
-    if (this.previous == null && this.next == null) {
-      ret = Situation.EMPTY;
-    } else if (this.previous == null) {
-      ret = Situation.ONLY_RIGHT_BOX;
-    } else if (this.next == null) {
-      ret = Situation.ONLY_LEFT_BOX;
-    } else if (this.previous.gapZ == this.next.gapZ) {
-      ret = Situation.EQUAL_SIDES;
-    } else {
-      ret = Situation.DIFFERENT_SIDES;
+    public ScrapPad() {
+        this.previous = null;
+        this.next = null;
     }
-    return ret;
-  }
 
-  public void updateGaps(long gapX, long gapZ) {
-    this.gapX = gapX;
-    this.gapZ = gapZ;
-  }
+    public ScrapPad(ScrapPad previous, ScrapPad next) {
+        this.previous = previous;
+        this.next = next;
+    }
 
-  public ScrapPad getPrevious() {
-    return previous;
-  }
+    public ScrapPad(ScrapPad previous, ScrapPad next, long gapX, long gapZ) {
+        this.previous = previous;
+        this.next = next;
+        this.gapX = gapX;
+        this.gapZ = gapZ;
+    }
 
-  public void setPrevious(ScrapPad previous) {
-    this.previous = previous;
-  }
+    public Situation isSituation() {
+        Situation ret;
+        if (this.previous == null && this.next == null) {
+            ret = Situation.EMPTY;
+        } else if (this.previous == null) {
+            ret = Situation.ONLY_RIGHT_BOX;
+        } else if (this.next == null) {
+            ret = Situation.ONLY_LEFT_BOX;
+        } else if (this.previous.gapZ == this.next.gapZ) {
+            ret = Situation.EQUAL_SIDES;
+        } else {
+            ret = Situation.DIFFERENT_SIDES;
+        }
+        return ret;
+    }
 
-  public ScrapPad getNext() {
-    return next;
-  }
+    public void updateGaps(long gapX, long gapZ) {
+        this.gapX = gapX;
+        this.gapZ = gapZ;
+    }
 
-  public void setNext(ScrapPad next) {
-    this.next = next;
-  }
+    public ScrapPad getPrevious() {
+        return previous;
+    }
 
-  public long getGapX() {
-    return gapX;
-  }
+    public void setPrevious(ScrapPad previous) {
+        this.previous = previous;
+    }
 
-  public void setGapX(long gapX) {
-    this.gapX = gapX;
-  }
+    public ScrapPad getNext() {
+        return next;
+    }
 
-  public void incrementGapX(long toIncrement) {
-    this.gapX += toIncrement;
-  }
+    public void setNext(ScrapPad next) {
+        this.next = next;
+    }
 
-  public long getGapZ() {
-    return gapZ;
-  }
+    public long getGapX() {
+        return gapX;
+    }
 
-  public void setGapZ(long gapZ) {
-    this.gapZ = gapZ;
-  }
+    public void setGapX(long gapX) {
+        this.gapX = gapX;
+    }
 
-  public void incrementGapZ(long toIncrement) {
-    this.gapZ += toIncrement;
-  }
+    public void incrementGapX(long toIncrement) {
+        this.gapX += toIncrement;
+    }
+
+    public long getGapZ() {
+        return gapZ;
+    }
+
+    public void setGapZ(long gapZ) {
+        this.gapZ = gapZ;
+    }
+
+    public void incrementGapZ(long toIncrement) {
+        this.gapZ += toIncrement;
+    }
+
+    public enum Situation {
+        EMPTY, ONLY_LEFT_BOX, ONLY_RIGHT_BOX, EQUAL_SIDES, DIFFERENT_SIDES
+    }
 }

@@ -3,7 +3,7 @@ package dev.rsoliveira.tools.binpacking.service;
 import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.Solution;
-import dev.rsoliveira.tools.binpacking.simulation.AirForceBinPacking;
+import dev.rsoliveira.tools.binpacking.simulation.PalletPackingSimulation;
 import dev.rsoliveira.tools.binpacking.simulation.ISimulation;
 
 import java.util.ArrayList;
@@ -13,17 +13,12 @@ public class PackingService {
 
     private static ISimulation<Container, Item> simulator;
 
-    private static PackingService instance = new PackingService();
-
     private PackingService() {
-        simulator = new AirForceBinPacking();
+        simulator = new PalletPackingSimulation();
     }
 
     public static synchronized PackingService getInstance() {
-        if (instance == null) {
-            instance = new PackingService();
-        }
-        return instance;
+        return new PackingService();
     }
 
     /**
@@ -53,7 +48,8 @@ public class PackingService {
      * the unpacked items simulate the packing, until all containers were used.
      * If there are unpacked items at the of simulations, the last solution will have the remaining ones.
      * It is best to use this method when the list of containers is known.
-     * @param containers the list of containers to use on the simulation; each container can be used for one simulation only.
+     * @param containers the list of containers to use on the simulation; each container can be used for one simulation
+     *                   only.
      * @param items the list of all items that will be packed.
      * @return a list of possible packings, containing position and direction for each item inside the containers.
      */
