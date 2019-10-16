@@ -5,7 +5,11 @@ package dev.rsoliveira.tools.binpacking.domain;
  */
 public class Container extends Volume {
 
-  public Container(int id, long dimension1, long dimension2, long dimension3, ItemRotation rotation) {
-    super(id, dimension1, dimension2, dimension3, 1, rotation);
-  }
+    public Container() {
+        super();
+    }
+
+    public Container(int id, long dimension1, long dimension2, long dimension3, ItemRotation rotation) {
+        super(id, dimension1, dimension2, dimension3, 1, rotation);
+    }
 }

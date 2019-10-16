@@ -4,7 +4,7 @@ import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.ItemRotation;
 import dev.rsoliveira.tools.binpacking.domain.Solution;
-import dev.rsoliveira.tools.binpacking.simulation.AirForceBinPacking;
+import dev.rsoliveira.tools.binpacking.simulation.PalletPackingSimulation;
 import dev.rsoliveira.tools.binpacking.simulation.ISimulation;
 import org.junit.Test;
 
@@ -24,7 +24,7 @@ public abstract class SetAbstractTest {
         Container container = new Container(1, 104, 96, 84, ItemRotation.FULL);
 
         List<Solution> solutions = new ArrayList<>();
-        ISimulation<Container, Item> simulator = new AirForceBinPacking();
+        ISimulation<Container, Item> simulator = new PalletPackingSimulation();
         Solution solution = simulator.simulate(container, items);
         solutions.add(solution);
         while (solution.getRemainingItems().size() > 0) {

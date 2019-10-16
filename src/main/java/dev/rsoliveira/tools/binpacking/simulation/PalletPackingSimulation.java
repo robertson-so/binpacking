@@ -11,46 +11,9 @@ import java.util.*;
  * Both container and items can be rotated in horizontal axes only or in all directions, for better
  * space utilization.
  */
-public class AirForceBinPacking implements ISimulation<Container, Item> {
+public class PalletPackingSimulation implements ISimulation<Container, Item> {
 
     private final int MAX_LENGTH = 32767;
-
-    private boolean packing;
-    private boolean layerDone;
-    private boolean evenedLayer;
-    private boolean hundredPercentPacked;
-
-    private int bestVariant;
-    private int bestIteration;
-
-    private long boxX, boxY, boxZ;
-    private int boxFittingIndex;
-    private long bboxx, bboxy, bboxz;
-    private int boxNotfittingIndex;
-    private long checkedBoxX, checkedBoxY, checkedBoxZ;
-    private int checkedBoxIndex;
-    private long boxFittingX, boxFittingY, boxFittingZ;
-    private long boxNotFittingX, boxNotFittingY, botNotFittingZ;
-
-    private long layerInLayer;
-    private long preLayer;
-    private long layerInLayerZ;
-    private long maxAvailableThickness;
-    private long remainpz;
-    private long layerThickness;
-    private long packedItemCounter;
-    private long bestPackedTotal;
-
-    private double packedVolume;
-    private double bestVolume;
-    private double totalContainerVolume;
-    private double totalItemVolume;
-    private double percentageUsed;
-
-    private List<Item> inputItems;
-    private Item[] itemsToPack;
-
-    private ScrapPad scrapFirst;
 
     /**
      * Simulates packing a list of items into a container.
@@ -60,37 +23,9 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
      * a list of unpacked items.
      */
     public Solution simulate(Container container, List<Item> volumes) {
-        initialize(container, volumes);
-        iterate(container);
-        return report(container);
-    }
-
-    private void initialize(Container container, List<Item> items) {
-        inputItems = items;
-
-        totalContainerVolume = container.getVolume();
-        totalItemVolume = 0.0;
-        int total = 0;
-        for (Item item : items) {
-            total += item.getQuantity();
-            totalItemVolume += (item.getVolume() * item.getQuantity());
-        }
-        itemsToPack = new Item[total];
-
-        // creates all necessary items, based on the items' configuration
-        int index = 0;
-        long totalItemsToPack = 0;
-        for (Item item : items) {
-            totalItemsToPack += item.getQuantity();
-            for (; index < totalItemsToPack; index++) {
-                itemsToPack[index] = (new Item(index + 1, item.getCode(),
-                        item.getDimension1(), item.getDimension2(), item.getDimension3(), item.getQuantity(),
-                        item.getRotation()));
-            }
-        }
-
-        scrapFirst = new ScrapPad();
-        hundredPercentPacked = false;
+        PalletPackingState state = new PalletPackingState(container, volumes);
+        iterate(state);
+        return report(state);
     }
 
     /**
@@ -98,14 +33,14 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
      *
      * @param container the container to be filled with items.
      */
-    private void iterate(Container container) {
+    private void iterate(PalletPackingState state) {
         long prepackedy;
         long preremainpy;
         long packedy;
-        bestVolume = 0.0;
+        state.setBestVolume(0.0);
 
         int maxContainerOrientation;
-        switch (container.getRotation()) {
+        switch (state.getContainer().getRotation()) {
             case FULL:
                 maxContainerOrientation = 6;
                 break;
@@ -118,62 +53,59 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
         }
 
         for (int containerOrientation = 1; containerOrientation <= maxContainerOrientation; containerOrientation++) {
-            Volume orientation = container.atOrientation(containerOrientation);
+            Volume orientation = state.getContainer().atOrientation(containerOrientation);
 
-            List<Layer> layers = listCandidateLayers(orientation);
+            List<Layer> layers = listCandidateLayers(state, orientation);
 
-            for (int layersindex = 0; layersindex < layers.size(); layersindex++) {
-                packedVolume = 0.0;
+            for (int layersindex = 1; layersindex < layers.size(); layersindex++) {
+                state.setPackedVolume(0.0);
                 packedy = 0;
-                packing = true;
-                layerThickness = layers.get(layersindex).getDimension();
-                maxAvailableThickness = orientation.getDimension2();
-                remainpz = orientation.getDimension3();
-                packedItemCounter = 0;
+                state.setPacking(true);
+                state.setLayerThickness(layers.get(layersindex).getDimension());
+                state.setMaxAvailableThickness(orientation.getDimension2());
+                state.setRemainpz(orientation.getDimension3());
 
-                for (int i = 0; i < itemsToPack.length; i++) {
-                    itemsToPack[i].reset();
+                for (int i = 0; i < state.getItemsToPack().length; i++) {
+                    state.getItemsToPack()[i].reset();
                 }
 
                 do {
-                    layerInLayer = 0;
-                    layerDone = false;
-                    packLayer(orientation, packedy);
-                    packedy += layerThickness;
-                    maxAvailableThickness = orientation.getDimension2() - packedy;
-                    if (layerInLayer != 0) {
+                    state.setLayerInLayer(0);
+                    state.setLayerDone(false);
+                    packLayer(state, orientation, packedy);
+                    packedy += state.getLayerThickness();
+                    state.setMaxAvailableThickness(orientation.getDimension2() - packedy);
+                    if (state.getLayerInLayer() != 0) {
                         prepackedy = packedy;
-                        preremainpy = maxAvailableThickness;
-                        maxAvailableThickness = layerThickness - preLayer;
-                        packedy = packedy - layerThickness + preLayer;
-                        remainpz = layerInLayerZ;
-                        layerThickness = layerInLayer;
-                        layerDone = false;
-                        packLayer(orientation, packedy);
+                        preremainpy = state.getMaxAvailableThickness();
+                        state.setMaxAvailableThickness(state.getLayerThickness() - state.getPreLayer());
+                        packedy = packedy - state.getLayerThickness() + state.getPreLayer();
+                        state.setRemainpz(state.getLayerInLayerZ());
+                        state.setLayerThickness(state.getLayerInLayer());
+                        state.setLayerDone(false);
+                        packLayer(state, orientation, packedy);
                         packedy = prepackedy;
-                        maxAvailableThickness = preremainpy;
-                        remainpz = orientation.getDimension3();
+                        state.setMaxAvailableThickness(preremainpy);
+                        state.setRemainpz(orientation.getDimension3());
                     }
-                    findLayer(orientation, maxAvailableThickness);
+                    findLayer(state, orientation, state.getMaxAvailableThickness());
                 }
-                while (packing);
+                while (state.isPacking());
 
-                if (packedVolume > bestVolume) {
-                    bestVolume = packedVolume;
-                    bestVariant = containerOrientation;
-                    bestIteration = layersindex;
-                    bestPackedTotal = packedItemCounter;
+                if (state.getPackedVolume() > state.getBestVolume()) {
+                    state.setBestVolume(state.getPackedVolume());
+                    state.setBestVariant(containerOrientation);
+                    state.setBestIteration(layersindex);
                 }
 
-                if (hundredPercentPacked) {
+                if (state.isHundredPercentPacked()) {
                     break;
                 }
-                percentageUsed = bestVolume * 100 / totalContainerVolume;
             }
-            if (hundredPercentPacked) {
+            if (state.isHundredPercentPacked()) {
                 break;
             }
-            if (container.isCubic()) {
+            if (state.getContainer().isCubic()) {
                 containerOrientation = 6;
             }
         }
@@ -182,7 +114,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     /**
      * Lists all possible layer heights, giving a weight value to each layer.
      */
-    private List<Layer> listCandidateLayers(Volume orientation) {
+    private List<Layer> listCandidateLayers(PalletPackingState state, Volume orientation) {
         boolean same;
         long examinedDimension, dimdif, dimension2, dimension3;
         double weight;
@@ -190,7 +122,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
         List<Layer> layers = new ArrayList<>();
         layers.add(new Layer(-1, 0));
 
-        for (Item item : inputItems) {
+        for (Item item : state.getInputItems()) {
             int max;
             switch (item.getRotation()) {
                 case FULL: max = 3; break;
@@ -230,7 +162,7 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 }
 
                 weight = 0;
-                for (Item item2 : inputItems) {
+                for (Item item2 : state.getInputItems()) {
                     if (item.getId() == item2.getId()) continue;
 
                     dimdif = Math.abs(examinedDimension - item2.getDimension1());
@@ -253,21 +185,21 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     /**
      * Packes the boxes found and arranges all variables and records properly.
      */
-    private void packLayer(Volume orientation, long packedy) {
+    private void packLayer(PalletPackingState state, Volume orientation, long packedy) {
         long gapLengthX, gapLengthZ, maxGapZ;
         long newPositionX;
         ScrapPad smallestZ;
 
-        if (layerThickness == 0) {
-            packing = false;
+        if (state.getLayerThickness() == 0) {
+            state.setPacking(false);
             return;
         }
 
-        scrapFirst.updateGaps(orientation.getDimension1(), 0);
+        state.getScrapFirst().updateGaps(orientation.getDimension1(), 0);
 
         while (true) {
-            smallestZ = findSmallestZ();
-            maxGapZ = remainpz - smallestZ.getGapZ();
+            smallestZ = findSmallestZ(state);
+            maxGapZ = state.getRemainpz() - smallestZ.getGapZ();
 
             // calculating remaining area in the XZ plane, based on the smallest z found
             switch (smallestZ.isSituation()) {
@@ -298,13 +230,13 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 }
             }
 
-            findBox(gapLengthX, layerThickness, maxAvailableThickness, gapLengthZ, maxGapZ);
-            checkFound(smallestZ);
+            findBox(state, gapLengthX, gapLengthZ, maxGapZ);
+            checkFound(state, smallestZ);
 
-            if (layerDone) {
+            if (state.isLayerDone()) {
                 break;
             }
-            if (evenedLayer) {
+            if (state.isEvenedLayer()) {
                 continue;
             }
 
@@ -315,37 +247,37 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 case EMPTY: {
                     newPositionX = 0;
 
-                    if (checkedBoxX == smallestZ.getGapX()) {
-                        smallestZ.incrementGapZ(checkedBoxZ);
+                    if (state.getCheckedBoxX() == smallestZ.getGapX()) {
+                        smallestZ.incrementGapZ(state.getCheckedBoxZ());
                     } else {
                         smallestZ.setNext(new ScrapPad(smallestZ, null, smallestZ.getGapX(), smallestZ.getGapZ()));
-                        smallestZ.updateGaps(checkedBoxX, smallestZ.getGapZ() + checkedBoxZ);
+                        smallestZ.updateGaps(state.getCheckedBoxX(), smallestZ.getGapZ() + state.getCheckedBoxZ());
                     }
                     break;
                 }
                 case ONLY_RIGHT_BOX: {
                     newPositionX = 0;
 
-                    if (checkedBoxX == smallestZ.getGapX()) {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getNext().getGapZ()) {
+                    if (state.getCheckedBoxX() == smallestZ.getGapX()) {
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getNext().getGapZ()) {
                             smallestZ.updateGaps(smallestZ.getNext().getGapX(), smallestZ.getNext().getGapZ());
                             smallestZ.setNext(smallestZ.getNext().getNext());
                             if (smallestZ.getNext() != null) {
                                 smallestZ.getNext().setPrevious(smallestZ);
                             }
                         } else {
-                            smallestZ.incrementGapZ(checkedBoxZ);
+                            smallestZ.incrementGapZ(state.getCheckedBoxZ());
                         }
                     } else {
-                        newPositionX = smallestZ.getGapX() - checkedBoxX;
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getNext().getGapZ()) {
-                            smallestZ.incrementGapX(-checkedBoxX);
+                        newPositionX = smallestZ.getGapX() - state.getCheckedBoxX();
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getNext().getGapZ()) {
+                            smallestZ.incrementGapX(-state.getCheckedBoxX());
                         } else {
                             smallestZ.getNext().setPrevious(new ScrapPad(smallestZ, smallestZ.getNext()));
                             smallestZ.setNext(smallestZ.getNext().getPrevious());
                             smallestZ.getNext().setGapX(smallestZ.getGapX());
-                            smallestZ.setGapX(smallestZ.getGapX() - checkedBoxX);
-                            smallestZ.getNext().setGapZ(smallestZ.getGapZ() + checkedBoxZ);
+                            smallestZ.setGapX(smallestZ.getGapX() - state.getCheckedBoxX());
+                            smallestZ.getNext().setGapZ(smallestZ.getGapZ() + state.getCheckedBoxZ());
                         }
                     }
                     break;
@@ -353,22 +285,22 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 case ONLY_LEFT_BOX: {
                     newPositionX = smallestZ.getPrevious().getGapX();
 
-                    if (checkedBoxX == smallestZ.getGapX() - smallestZ.getPrevious().getGapX()) {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
+                    if (state.getCheckedBoxX() == smallestZ.getGapX() - smallestZ.getPrevious().getGapX()) {
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getPrevious().getGapZ()) {
                             smallestZ.getPrevious().setGapX(smallestZ.getGapX());
                             smallestZ.getPrevious().setNext(null);
                         } else {
-                            smallestZ.incrementGapZ(checkedBoxZ);
+                            smallestZ.incrementGapZ(state.getCheckedBoxZ());
                         }
                     } else {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
-                            smallestZ.getPrevious().incrementGapX(checkedBoxX);
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getPrevious().getGapZ()) {
+                            smallestZ.getPrevious().incrementGapX(state.getCheckedBoxX());
                         } else {
                             smallestZ.getPrevious().setNext(new ScrapPad(smallestZ.getPrevious(), smallestZ));
                             smallestZ.setPrevious(smallestZ.getPrevious().getNext());
                             smallestZ.getPrevious().updateGaps(
-                                    smallestZ.getPrevious().getPrevious().getGapX() + checkedBoxX,
-                                    smallestZ.getGapZ() + checkedBoxZ);
+                                    smallestZ.getPrevious().getPrevious().getGapX() + state.getCheckedBoxX(),
+                                    smallestZ.getGapZ() + state.getCheckedBoxZ());
                         }
                     }
                     break;
@@ -376,8 +308,8 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 case EQUAL_SIDES: {
                     newPositionX = smallestZ.getPrevious().getGapX();
 
-                    if (checkedBoxX == smallestZ.getGapX() - smallestZ.getPrevious().getGapX()) {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getNext().getGapZ()) {
+                    if (state.getCheckedBoxX() == smallestZ.getGapX() - smallestZ.getPrevious().getGapX()) {
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getNext().getGapZ()) {
                             smallestZ.getPrevious().setGapX(smallestZ.getNext().getGapX());
                             if (smallestZ.getNext().getNext() != null) {
                                 smallestZ.getPrevious().setNext(smallestZ.getNext().getNext());
@@ -386,29 +318,31 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                                 smallestZ.getPrevious().setNext(null);
                             }
                         } else {
-                            smallestZ.incrementGapZ(checkedBoxZ);
+                            smallestZ.incrementGapZ(state.getCheckedBoxZ());
                         }
                     } else if (smallestZ.getPrevious().getGapX() < orientation.getDimension1() - smallestZ.getGapX()) {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
-                            smallestZ.incrementGapX(-checkedBoxX);
-                            newPositionX = smallestZ.getGapX() - checkedBoxX;
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getPrevious().getGapZ()) {
+                            smallestZ.incrementGapX(-state.getCheckedBoxX());
+                            newPositionX = smallestZ.getGapX() - state.getCheckedBoxX();
                         } else {
                             smallestZ.getPrevious().setNext(new ScrapPad(smallestZ.getPrevious(), smallestZ));
                             smallestZ.setPrevious(smallestZ.getPrevious().getNext());
                             smallestZ.getPrevious().updateGaps(
-                                    smallestZ.getPrevious().getPrevious().getGapX() + checkedBoxX,
-                                    smallestZ.getGapZ() + checkedBoxZ);
+                                    smallestZ.getPrevious().getPrevious().getGapX() + state.getCheckedBoxX(),
+                                    smallestZ.getGapZ() + state.getCheckedBoxZ());
                         }
                     } else {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
-                            smallestZ.getPrevious().setGapX(smallestZ.getPrevious().getGapX() + checkedBoxX);
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getPrevious().getGapZ()) {
+                            smallestZ.getPrevious().setGapX(smallestZ.getPrevious().getGapX() + state.getCheckedBoxX());
                             newPositionX = smallestZ.getPrevious().getGapX();
                         } else {
-                            newPositionX = smallestZ.getGapX() - checkedBoxX;
+                            newPositionX = smallestZ.getGapX() - state.getCheckedBoxX();
                             smallestZ.getNext().setPrevious(new ScrapPad(smallestZ, smallestZ.getNext()));
                             smallestZ.setNext(smallestZ.getNext().getPrevious());
-                            smallestZ.getNext().updateGaps(smallestZ.getGapX(), smallestZ.getGapZ() + checkedBoxZ);
-                            smallestZ.incrementGapX(-checkedBoxX);
+                            smallestZ.getNext().updateGaps(
+                                    smallestZ.getGapX(),
+                                    smallestZ.getGapZ() + state.getCheckedBoxZ());
+                            smallestZ.incrementGapX(-state.getCheckedBoxX());
                         }
                     }
                     break;
@@ -416,34 +350,43 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                 default: {
                     newPositionX = smallestZ.getPrevious().getGapX();
 
-                    if (checkedBoxX == smallestZ.getGapX() - smallestZ.getPrevious().getGapX()) {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
+                    if (state.getCheckedBoxX() == smallestZ.getGapX() - smallestZ.getPrevious().getGapX()) {
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getPrevious().getGapZ()) {
                             smallestZ.getPrevious().setGapX(smallestZ.getGapX());
                             smallestZ.getPrevious().setNext(smallestZ.getNext());
                             smallestZ.getNext().setPrevious(smallestZ.getPrevious());
                         } else {
-                            smallestZ.incrementGapZ(checkedBoxZ);
+                            smallestZ.incrementGapZ(state.getCheckedBoxZ());
                         }
                     } else {
-                        if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getPrevious().getGapZ()) {
-                            smallestZ.getPrevious().incrementGapX(checkedBoxX);
-                        } else if (smallestZ.getGapZ() + checkedBoxZ == smallestZ.getNext().getGapZ()) {
-                            newPositionX = smallestZ.getGapX() - checkedBoxX;
-                            smallestZ.incrementGapX(-checkedBoxX);
+                        if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getPrevious().getGapZ()) {
+                            smallestZ.getPrevious().incrementGapX(state.getCheckedBoxX());
+                        } else if (smallestZ.getGapZ() + state.getCheckedBoxZ() == smallestZ.getNext().getGapZ()) {
+                            newPositionX = smallestZ.getGapX() - state.getCheckedBoxX();
+                            smallestZ.incrementGapX(-state.getCheckedBoxX());
                         } else {
                             smallestZ.getPrevious().setNext(new ScrapPad(smallestZ.getPrevious(), smallestZ));
                             smallestZ.setPrevious(smallestZ.getPrevious().getNext());
                             smallestZ.getPrevious().updateGaps(
-                                    smallestZ.getPrevious().getPrevious().getGapX() + checkedBoxX,
-                                    smallestZ.getGapZ() + checkedBoxZ);
+                                    smallestZ.getPrevious().getPrevious().getGapX() + state.getCheckedBoxX(),
+                                    smallestZ.getGapZ() + state.getCheckedBoxZ());
                         }
                     }
                     break;
                 }
             }
 
-            itemsToPack[checkedBoxIndex].setPosition(newPositionX, newPositionY, newPositionZ);
-            volumeCheck();
+            state.getItemsToPack()[state.getCheckedBoxIndex()]
+                    .setPosition(newPositionX, newPositionY, newPositionZ);
+            state.getItemsToPack()[state.getCheckedBoxIndex()]
+                    .packAtOrientation(state.getCheckedBoxX(), state.getCheckedBoxY(), state.getCheckedBoxZ());
+            state.setPackedVolume(state.getPackedVolume() +
+                    state.getItemsToPack()[state.getCheckedBoxIndex()].getVolume());
+
+            if (state.getPackedVolume() == state.getTotalContainerVolume() || state.getPackedVolume() == state.getTotalItemVolume()) {
+                state.setPacking(false);
+                state.setHundredPercentPacked(true);
+            }
         }
     }
 
@@ -452,17 +395,17 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
      *
      * @param thickness the layer thickness.
      */
-    private void findLayer(Volume orientation, double thickness) {
+    private void findLayer(PalletPackingState state, Volume orientation, double thickness) {
         long examinedDimension, dimdif, dimension2, dimension3;
         double layereval, eval = 1000000;
-        layerThickness = 0;
-        for (int x = 0; x < itemsToPack.length; x++) {
-            if (itemsToPack[x].isPacked()) {
+        state.setLayerThickness(0);
+        for (int x = 0; x < state.getItemsToPack().length; x++) {
+            if (state.getItemsToPack()[x].isPacked()) {
                 continue;
             }
 
             int max;
-            switch (itemsToPack[x].getRotation()) {
+            switch (state.getItemsToPack()[x].getRotation()) {
                 case FULL: max = 3; break;
                 case HORIZONTAL: max = 2; break;
                 default: max = 1; break;
@@ -470,30 +413,31 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
             for (int y = 1; y <= max; y++) {
                 switch (y) {
                     case 2:
-                        examinedDimension = itemsToPack[x].getDimension2();
-                        dimension2 = itemsToPack[x].getDimension1();
-                        dimension3 = itemsToPack[x].getDimension3();
+                        examinedDimension = state.getItemsToPack()[x].getDimension2();
+                        dimension2 = state.getItemsToPack()[x].getDimension1();
+                        dimension3 = state.getItemsToPack()[x].getDimension3();
                         break;
                     case 3:
-                        examinedDimension = itemsToPack[x].getDimension3();
-                        dimension2 = itemsToPack[x].getDimension1();
-                        dimension3 = itemsToPack[x].getDimension2();
+                        examinedDimension = state.getItemsToPack()[x].getDimension3();
+                        dimension2 = state.getItemsToPack()[x].getDimension1();
+                        dimension3 = state.getItemsToPack()[x].getDimension2();
                         break;
                     default:
-                        examinedDimension = itemsToPack[x].getDimension1();
-                        dimension2 = itemsToPack[x].getDimension2();
-                        dimension3 = itemsToPack[x].getDimension3();
+                        examinedDimension = state.getItemsToPack()[x].getDimension1();
+                        dimension2 = state.getItemsToPack()[x].getDimension2();
+                        dimension3 = state.getItemsToPack()[x].getDimension3();
                         break;
                 }
                 layereval = 0;
-                if ((examinedDimension <= thickness) && (((dimension2 <= orientation.getDimension1()) && (dimension3 <= orientation.getDimension3())) ||
+                if ((examinedDimension <= thickness) && (((dimension2 <= orientation.getDimension1()) &&
+                    (dimension3 <= orientation.getDimension3())) ||
                     ((dimension3 <= orientation.getDimension1()) && (dimension2 <= orientation.getDimension3())))) {
-                    for (int z = 0; z < itemsToPack.length; z++) {
-                        if (itemsToPack[z].isPacked()) {
+                    for (int z = 0; z < state.getItemsToPack().length; z++) {
+                        if (state.getItemsToPack()[z].isPacked()) {
                             continue;
                         }
                         if (x != z) {
-                            Item otherItem = itemsToPack[z];
+                            Item otherItem = state.getItemsToPack()[z];
                             dimdif = Math.abs(examinedDimension - otherItem.getDimension1());
                             if (Math.abs(examinedDimension - otherItem.getDimension2()) < dimdif) {
                                 dimdif = Math.abs(examinedDimension - otherItem.getDimension2());
@@ -506,13 +450,13 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
                     }
                     if (layereval < eval) {
                         eval = layereval;
-                        layerThickness = examinedDimension;
+                        state.setLayerThickness(examinedDimension);
                     }
                 }
             }
         }
-        if (layerThickness == 0 || layerThickness > maxAvailableThickness) {
-            packing = false;
+        if (state.getLayerThickness() == 0 || state.getLayerThickness() > state.getMaxAvailableThickness()) {
+            state.setPacking(false);
         }
     }
 
@@ -526,44 +470,39 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
      * @param currentGapZ      the remaining z-dimension gap.
      * @param maxGapZ          the container z-dimension.
      */
-    private void findBox(long maxGapX, long currentThickness, long maxGapY, long currentGapZ, long maxGapZ) {
-        boxFittingX = MAX_LENGTH;
-        boxFittingY = MAX_LENGTH;
-        boxFittingZ = MAX_LENGTH;
-        boxNotFittingX = MAX_LENGTH;
-        boxNotFittingY = MAX_LENGTH;
-        botNotFittingZ = MAX_LENGTH;
-        boxFittingIndex = -1;
-        boxNotfittingIndex = -1;
-        for (int y = 0; y < itemsToPack.length; y += itemsToPack[y].getQuantity()) {
+    private void findBox(PalletPackingState state, long maxGapX, long currentGapZ, long maxGapZ) {
+        state.setBoxFittingX(MAX_LENGTH);
+        state.setBoxFittingY(MAX_LENGTH);
+        state.setBoxFittingZ(MAX_LENGTH);
+        state.setBoxNotFittingX(MAX_LENGTH);
+        state.setBoxNotFittingY(MAX_LENGTH);
+        state.setBotNotFittingZ(MAX_LENGTH);
+        state.setBoxFittingIndex(-1);
+        state.setBoxNotFittingIndex(-1);
+        for (int y = 0; y < state.getItemsToPack().length; y += state.getItemsToPack()[y].getQuantity()) {
             int index;
-            for (index = y; index < (index + itemsToPack[y].getQuantity()) - 1; index++) {
-                if (index == (itemsToPack.length - 1) || !itemsToPack[index].isPacked()) {
+            for (index = y; index < (index + state.getItemsToPack()[y].getQuantity()) - 1; index++) {
+                if (index == state.getItemsToPack().length) return;
+                if (!state.getItemsToPack()[index].isPacked()) {
                     break;
                 }
             }
-            if (itemsToPack[index].isPacked()) {
+            if (state.getItemsToPack()[index].isPacked()) {
                 continue;
             }
-            analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
-                    itemsToPack[index].getDimension1(), itemsToPack[index].getDimension2(), itemsToPack[index].getDimension3());
-            // cubes need to be analyzed only one time
-            if (itemsToPack[index].isCubic()) {
-                continue;
+
+            int max;
+            if (state.getItemsToPack()[index].isCubic()) {
+                max = 1;
+            } else {
+                switch (state.getItemsToPack()[index].getRotation()) {
+                    case FULL: max = 6; break;
+                    case HORIZONTAL: max = 2; break;
+                    default: max = 1; break;
+                }
             }
-            if (ItemRotation.FULL.equals(itemsToPack[index].getRotation())) {
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
-                        itemsToPack[index].getDimension1(), itemsToPack[index].getDimension3(), itemsToPack[index].getDimension2());
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
-                        itemsToPack[index].getDimension2(), itemsToPack[index].getDimension1(), itemsToPack[index].getDimension3());
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
-                        itemsToPack[index].getDimension2(), itemsToPack[index].getDimension3(), itemsToPack[index].getDimension1());
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
-                        itemsToPack[index].getDimension3(), itemsToPack[index].getDimension1(), itemsToPack[index].getDimension2());
-            }
-            if (ItemRotation.FULL.equals(itemsToPack[index].getRotation()) || ItemRotation.HORIZONTAL.equals(itemsToPack[index].getRotation())) {
-                analyzeBox(index, maxGapX, currentThickness, maxGapY, currentGapZ, maxGapZ,
-                        itemsToPack[index].getDimension3(), itemsToPack[index].getDimension2(), itemsToPack[index].getDimension1());
+            for (int i = 1; i <= max; i++) {
+                analyzeBox(state, index, maxGapX, currentGapZ, maxGapZ, state.getItemsToPack()[index].atOrientation(i));
             }
         }
     }
@@ -582,31 +521,40 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
      * @param dimension2  second item dimension.
      * @param dimension3  third item dimension.
      */
-    private void analyzeBox(int index, long maxGapX, long currentGapY, long maxGapY, long currentGapZ, long maxGapZ, long dimension1, long dimension2, long dimension3) {
-        if (dimension1 <= maxGapX && dimension2 <= maxGapY && dimension3 <= maxGapZ) {
-            if (dimension2 <= currentGapY) {
-                if ((currentGapY - dimension2 < boxFittingY) ||
-                        (currentGapY - dimension2 == boxFittingY && maxGapX - dimension1 < boxFittingX) ||
-                        (currentGapY - dimension2 == boxFittingY && maxGapX - dimension1 == boxFittingX && Math.abs(currentGapZ - dimension3) < boxFittingZ)) {
-                    boxX = dimension1;
-                    boxY = dimension2;
-                    boxZ = dimension3;
-                    boxFittingX = maxGapX - dimension1;
-                    boxFittingY = currentGapY - dimension2;
-                    boxFittingZ = Math.abs(currentGapZ - dimension3);
-                    boxFittingIndex = index;
+    private void analyzeBox(PalletPackingState state, int index, long maxGapX, long currentGapZ, long maxGapZ, Volume orientation) {
+        long dimension1 = orientation.getDimension1();
+        long dimension2 = orientation.getDimension2();
+        long dimension3 = orientation.getDimension3();
+        if (dimension1 <= maxGapX && dimension2 <= state.getMaxAvailableThickness() && dimension3 <= maxGapZ) {
+            if (dimension2 <= state.getLayerThickness()) {
+                if ((state.getLayerThickness() - dimension2 < state.getBoxFittingY()) ||
+                        (state.getLayerThickness() - dimension2 == state.getBoxFittingY() &&
+                                maxGapX - dimension1 < state.getBoxFittingX()) ||
+                        (state.getLayerThickness() - dimension2 == state.getBoxFittingY() &&
+                                maxGapX - dimension1 == state.getBoxFittingX() &&
+                                Math.abs(currentGapZ - dimension3) < state.getBoxFittingZ())) {
+                    state.setBoxX(dimension1);
+                    state.setBoxY(dimension2);
+                    state.setBoxZ(dimension3);
+                    state.setBoxFittingX(maxGapX - dimension1);
+                    state.setBoxFittingY(state.getLayerThickness() - dimension2);
+                    state.setBoxFittingZ(Math.abs(currentGapZ - dimension3));
+                    state.setBoxFittingIndex(index);
                 }
             } else {
-                if ((dimension2 - currentGapY < boxNotFittingY) ||
-                        (dimension2 - currentGapY == boxNotFittingY && maxGapX - dimension1 < boxNotFittingX) ||
-                        (dimension2 - currentGapY == boxNotFittingY && maxGapX - dimension1 == boxNotFittingX && Math.abs(currentGapZ - dimension3) < botNotFittingZ)) {
-                    bboxx = dimension1;
-                    bboxy = dimension2;
-                    bboxz = dimension3;
-                    boxNotFittingX = maxGapX - dimension1;
-                    boxNotFittingY = dimension2 - currentGapY;
-                    botNotFittingZ = Math.abs(currentGapZ - dimension3);
-                    boxNotfittingIndex = index;
+                if ((dimension2 - state.getLayerThickness() < state.getBoxNotFittingY()) ||
+                        (dimension2 - state.getLayerThickness() == state.getBoxNotFittingY() &&
+                                maxGapX - dimension1 < state.getBoxNotFittingX()) ||
+                        (dimension2 - state.getLayerThickness() == state.getBoxNotFittingY() &&
+                                maxGapX - dimension1 == state.getBoxNotFittingX() &&
+                                Math.abs(currentGapZ - dimension3) < state.getBotNotFittingZ())) {
+                    state.setbBoxX(dimension1);
+                    state.setbBoxY(dimension2);
+                    state.setbBoxZ(dimension3);
+                    state.setBoxNotFittingX(maxGapX - dimension1);
+                    state.setBoxNotFittingY(dimension2 - state.getLayerThickness());
+                    state.setBotNotFittingZ(Math.abs(currentGapZ - dimension3));
+                    state.setBoxNotFittingIndex(index);
                 }
             }
         }
@@ -615,8 +563,8 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
     /**
      * Finds the item with the smallest z-dimension gap.
      */
-    private ScrapPad findSmallestZ() {
-        ScrapPad temp = scrapFirst;
+    private ScrapPad findSmallestZ(PalletPackingState state) {
+        ScrapPad temp = state.getScrapFirst();
         ScrapPad smallest = temp;
         while (temp.getNext() != null) {
             if (temp.getNext().getGapZ() < smallest.getGapZ()) {
@@ -631,37 +579,38 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
      * After finding each box, evaluate the candidate boxes and the current layer.
      * Verifies these rules:<br>
      * - if a box fitting in the current layer thickness has been found, keep its index and orientation for packing.<br>
-     * - if a box with a y-dimension greater than the current layer thickness has been found and the edge of the current layer is evenedLayer, reserve the box for another layer.<br>
+     * - if a box with a y-dimension greater than the current layer thickness has been found and the edge of the current
+     * layer is evenedLayer, reserve the box for another layer.<br>
      * - if there is no gap in the edge of the current layer, the packing of this layer is done.<br>
      * - if there is not fitting box to the current layer gap, skip this gap and even it by arranging the already packed items.
      */
-    private void checkFound(ScrapPad smallestZ) {
-        evenedLayer = false;
+    private void checkFound(PalletPackingState state, ScrapPad smallestZ) {
+        state.setEvenedLayer(false);
 
-        if (boxFittingIndex > -1) {
-            checkedBoxIndex = boxFittingIndex;
-            checkedBoxX = boxX;
-            checkedBoxY = boxY;
-            checkedBoxZ = boxZ;
+        if (state.getBoxFittingIndex() > -1) {
+            state.setCheckedBoxIndex(state.getBoxFittingIndex());
+            state.setCheckedBoxX(state.getBoxX());
+            state.setCheckedBoxY(state.getBoxY());
+            state.setCheckedBoxZ(state.getBoxZ());
         } else {
-            if ((boxNotfittingIndex > -1) &&
-                (layerInLayer != 0 || smallestZ.isSituation().equals(ScrapPad.Situation.EMPTY))) {
-                if (layerInLayer == 0) {
-                    preLayer = layerThickness;
-                    layerInLayerZ = smallestZ.getGapZ();
+            if ((state.getBoxNotFittingIndex() > -1) &&
+                (state.getLayerInLayer() != 0 || smallestZ.isSituation().equals(ScrapPad.Situation.EMPTY))) {
+                if (state.getLayerInLayer() == 0) {
+                    state.setPreLayer(state.getLayerThickness());
+                    state.setLayerInLayerZ(smallestZ.getGapZ());
                 }
-                checkedBoxIndex = boxNotfittingIndex;
-                checkedBoxX = bboxx;
-                checkedBoxY = bboxy;
-                checkedBoxZ = bboxz;
-                layerInLayer = layerInLayer + bboxy - layerThickness;
-                layerThickness = bboxy;
+                state.setCheckedBoxIndex(state.getBoxNotFittingIndex());
+                state.setCheckedBoxX(state.getbBoxX());
+                state.setCheckedBoxY(state.getbBoxY());
+                state.setCheckedBoxZ(state.getbBoxZ());
+                state.setLayerInLayer(state.getLayerInLayer() + state.getbBoxY() - state.getLayerThickness());
+                state.setLayerThickness(state.getbBoxY());
             } else {
-                evenedLayer = true;
+                state.setEvenedLayer(true);
                 switch (smallestZ.isSituation()) {
                     case EMPTY:  {
-                        evenedLayer = false;
-                        layerDone = true;
+                        state.setEvenedLayer(false);
+                        state.setLayerDone(true);
                         break;
                     }
                     case ONLY_RIGHT_BOX: {
@@ -698,65 +647,51 @@ public class AirForceBinPacking implements ISimulation<Container, Item> {
         }
     }
 
-    /**
-     * Defines the last evaluated item as packed and verifies if the packing is complete.
-     */
-    private void volumeCheck() {
-        itemsToPack[checkedBoxIndex].packAtOrientation(checkedBoxX, checkedBoxY, checkedBoxZ);
-        packedVolume += itemsToPack[checkedBoxIndex].getVolume();
-        packedItemCounter++;
-
-        if (packedVolume == totalContainerVolume || packedVolume == totalItemVolume) {
-            packing = false;
-            hundredPercentPacked = true;
-        }
-    }
-
-    private Solution report(Container container) {
+    private Solution report(PalletPackingState state) {
         long prepackedy;
         long preremainpy;
         long packedy = 0;
 
-        Volume orientation = container.atOrientation(bestVariant);
-        List<Layer> layers = listCandidateLayers(orientation);
+        Volume orientation = state.getContainer().atOrientation(state.getBestVariant());
+        List<Layer> layers = listCandidateLayers(state, orientation);
 
-        packedVolume = 0.0;
-        packing = true;
-        layerThickness = layers.get(bestIteration).getDimension();
-        maxAvailableThickness = orientation.getDimension2();
-        remainpz = orientation.getDimension3();
+        state.setPackedVolume(0.0);
+        state.setPacking(true);
+        state.setLayerThickness(layers.get(state.getBestIteration()).getDimension());
+        state.setMaxAvailableThickness(orientation.getDimension2());
+        state.setRemainpz(orientation.getDimension3());
 
-        for (Item item : itemsToPack) {
+        for (Item item : state.getItemsToPack()) {
             item.reset();
         }
 
         do {
-            layerInLayer = 0;
-            layerDone = false;
-            packLayer(orientation, packedy);
-            packedy += layerThickness;
-            maxAvailableThickness = orientation.getDimension2() - packedy;
-            if (layerInLayer != 0) {
+            state.setLayerInLayer(0);
+            state.setLayerDone(false);
+            packLayer(state, orientation, packedy);
+            packedy += state.getLayerThickness();
+            state.setMaxAvailableThickness(orientation.getDimension2() - packedy);
+            if (state.getLayerInLayer() != 0) {
                 prepackedy = packedy;
-                preremainpy = maxAvailableThickness;
-                maxAvailableThickness = layerThickness - preLayer;
-                packedy = packedy - layerThickness + preLayer;
-                remainpz = layerInLayerZ;
-                layerThickness = layerInLayer;
-                layerDone = false;
-                packLayer(orientation, packedy);
+                preremainpy = state.getMaxAvailableThickness();
+                state.setMaxAvailableThickness(state.getLayerThickness() - state.getPreLayer());
+                packedy = packedy - state.getLayerThickness() + state.getPreLayer();
+                state.setRemainpz(state.getLayerInLayerZ());
+                state.setLayerThickness(state.getLayerInLayer());
+                state.setLayerDone(false);
+                packLayer(state, orientation, packedy);
                 packedy = prepackedy;
-                maxAvailableThickness = preremainpy;
-                remainpz = orientation.getDimension3();
+                state.setMaxAvailableThickness(preremainpy);
+                state.setRemainpz(orientation.getDimension3());
             }
-            findLayer(orientation, maxAvailableThickness);
-        } while (packing);
+            findLayer(state, orientation, state.getMaxAvailableThickness());
+        } while (state.isPacking());
 
         Solution solution = new Solution(
-                new ArrayList<>(inputItems),
-                Arrays.asList(itemsToPack),
+                new ArrayList<>(state.getInputItems()),
+                Arrays.asList(state.getItemsToPack()),
                 orientation,
-                bestVolume);
+                state.getBestVolume());
 
         return solution;
     }

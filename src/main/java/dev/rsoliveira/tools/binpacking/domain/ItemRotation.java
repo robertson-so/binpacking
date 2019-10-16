@@ -8,7 +8,7 @@ package dev.rsoliveira.tools.binpacking.domain;
  * yxz - height is represented by x
  * xzy - height is represented by z
  * yzx - height is represented by z
- *
+ * <p>
  * faces:
  * xy
  * xz
@@ -16,7 +16,7 @@ package dev.rsoliveira.tools.binpacking.domain;
  */
 public enum ItemRotation {
 
-  FULL, // xyz, zyx, zxy, yxz, xzy, yzx
-  HORIZONTAL, // xyz, zyx
-  NONE // xyz
+    FULL, // xyz, zyx, zxy, yxz, xzy, yzx
+    HORIZONTAL, // xyz, zyx
+    NONE // xyz
 }
