@@ -71,6 +71,28 @@ public class PalletPackingState {
         this.hundredPercentPacked = false;
     }
 
+    public void resetPackedItems() {
+        setPackedVolume(0.0);
+        setPacking(true);
+        for (int i = 0; i < getItemsToPack().length; i++) {
+            getItemsToPack()[i].reset();
+        }
+    }
+
+    public void resetThickness(long layerThickness, long maxAvailableThickness, long remainpz) {
+        setLayerThickness(layerThickness);
+        setMaxAvailableThickness(maxAvailableThickness);
+        setRemainpz(remainpz);
+    }
+
+    public void validateBestState(int containerOrientation, int layersindex) {
+        if (getPackedVolume() > getBestVolume()) {
+            setBestVolume(getPackedVolume());
+            setBestVariant(containerOrientation);
+            setBestIteration(layersindex);
+        }
+    }
+
     public boolean isPacking() {
         return packing;
     }

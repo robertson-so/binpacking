@@ -2,7 +2,10 @@ package dev.rsoliveira.tools.binpacking.simulation;
 
 import dev.rsoliveira.tools.binpacking.domain.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A 3D bin packing simulation that uses a human heuristic to perform the packing.
@@ -12,8 +15,6 @@ import java.util.*;
  * space utilization.
  */
 public class PalletPackingSimulation implements ISimulation<Container, Item> {
-
-    private final int MAX_LENGTH = 32767;
 
     /**
      * Simulates packing a list of items into a container.
@@ -31,11 +32,9 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
     /**
      * Given a container, for each container orientation iterate all possible layers to fill it and find the best iteration.
      *
-     * @param container the container to be filled with items.
+     * @param state the packing state.
      */
     private void iterate(PalletPackingState state) {
-        long prepackedy;
-        long preremainpy;
         long packedy;
         state.setBestVolume(0.0);
 
@@ -58,45 +57,14 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
             List<Layer> layers = listCandidateLayers(state, orientation);
 
             for (int layersindex = 1; layersindex < layers.size(); layersindex++) {
-                state.setPackedVolume(0.0);
                 packedy = 0;
-                state.setPacking(true);
-                state.setLayerThickness(layers.get(layersindex).getDimension());
-                state.setMaxAvailableThickness(orientation.getDimension2());
-                state.setRemainpz(orientation.getDimension3());
 
-                for (int i = 0; i < state.getItemsToPack().length; i++) {
-                    state.getItemsToPack()[i].reset();
-                }
+                state.resetPackedItems();
+                state.resetThickness(layers.get(layersindex).getDimension(), orientation.getDimension2(), orientation.getDimension3());
 
-                do {
-                    state.setLayerInLayer(0);
-                    state.setLayerDone(false);
-                    packLayer(state, orientation, packedy);
-                    packedy += state.getLayerThickness();
-                    state.setMaxAvailableThickness(orientation.getDimension2() - packedy);
-                    if (state.getLayerInLayer() != 0) {
-                        prepackedy = packedy;
-                        preremainpy = state.getMaxAvailableThickness();
-                        state.setMaxAvailableThickness(state.getLayerThickness() - state.getPreLayer());
-                        packedy = packedy - state.getLayerThickness() + state.getPreLayer();
-                        state.setRemainpz(state.getLayerInLayerZ());
-                        state.setLayerThickness(state.getLayerInLayer());
-                        state.setLayerDone(false);
-                        packLayer(state, orientation, packedy);
-                        packedy = prepackedy;
-                        state.setMaxAvailableThickness(preremainpy);
-                        state.setRemainpz(orientation.getDimension3());
-                    }
-                    findLayer(state, orientation, state.getMaxAvailableThickness());
-                }
-                while (state.isPacking());
+                iterationCore(state, packedy, orientation);
 
-                if (state.getPackedVolume() > state.getBestVolume()) {
-                    state.setBestVolume(state.getPackedVolume());
-                    state.setBestVariant(containerOrientation);
-                    state.setBestIteration(layersindex);
-                }
+                state.validateBestState(containerOrientation, layersindex);
 
                 if (state.isHundredPercentPacked()) {
                     break;
@@ -115,8 +83,7 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
      * Lists all possible layer heights, giving a weight value to each layer.
      */
     private List<Layer> listCandidateLayers(PalletPackingState state, Volume orientation) {
-        boolean same;
-        long examinedDimension, dimdif, dimension2, dimension3;
+        long examinedDimension, dimension2, dimension3;
         double weight;
 
         List<Layer> layers = new ArrayList<>();
@@ -165,14 +132,7 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
                 for (Item item2 : state.getInputItems()) {
                     if (item.getId() == item2.getId()) continue;
 
-                    dimdif = Math.abs(examinedDimension - item2.getDimension1());
-                    if (Math.abs(examinedDimension - item2.getDimension2()) < dimdif) {
-                        dimdif = Math.abs(examinedDimension - item2.getDimension2());
-                    }
-                    if (Math.abs(examinedDimension - item2.getDimension3()) < dimdif) {
-                        dimdif = Math.abs(examinedDimension - item2.getDimension3());
-                    }
-                    weight += dimdif;
+                    weight = getDimensionDiff(examinedDimension, weight, item2);
                 }
                 layers.add(new Layer(weight, examinedDimension));
             }
@@ -180,6 +140,19 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
 
         Collections.sort(layers);
         return layers;
+    }
+
+    private double getDimensionDiff(long examinedDimension, double weight, Item item) {
+        long dimdif;
+        dimdif = Math.abs(examinedDimension - item.getDimension1());
+        if (Math.abs(examinedDimension - item.getDimension2()) < dimdif) {
+            dimdif = Math.abs(examinedDimension - item.getDimension2());
+        }
+        if (Math.abs(examinedDimension - item.getDimension3()) < dimdif) {
+            dimdif = Math.abs(examinedDimension - item.getDimension3());
+        }
+        weight += dimdif;
+        return weight;
     }
 
     /**
@@ -213,16 +186,8 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
                     gapLengthZ = smallestZ.getNext().getGapZ() - smallestZ.getGapZ();
                     break;
                 }
-                case ONLY_LEFT_BOX: {
-                    gapLengthX = smallestZ.getGapX() - smallestZ.getPrevious().getGapX();
-                    gapLengthZ = smallestZ.getPrevious().getGapZ() - smallestZ.getGapZ();
-                    break;
-                }
-                case EQUAL_SIDES: {
-                    gapLengthX = smallestZ.getGapX() - smallestZ.getPrevious().getGapX();
-                    gapLengthZ = smallestZ.getPrevious().getGapZ() - smallestZ.getGapZ();
-                    break;
-                }
+                case ONLY_LEFT_BOX:
+                case EQUAL_SIDES:
                 default: {
                     gapLengthX = smallestZ.getGapX() - smallestZ.getPrevious().getGapX();
                     gapLengthZ = smallestZ.getPrevious().getGapZ() - smallestZ.getGapZ();
@@ -240,7 +205,6 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
                 continue;
             }
 
-            long newPositionY = packedy;
             long newPositionZ = smallestZ.getGapZ();
             // calculating x-position for the item and updating the smallest z, based on the smallest-z
             switch (smallestZ.isSituation()) {
@@ -377,7 +341,7 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
             }
 
             state.getItemsToPack()[state.getCheckedBoxIndex()]
-                    .setPosition(newPositionX, newPositionY, newPositionZ);
+                    .setPosition(newPositionX, packedy, newPositionZ);
             state.getItemsToPack()[state.getCheckedBoxIndex()]
                     .packAtOrientation(state.getCheckedBoxX(), state.getCheckedBoxY(), state.getCheckedBoxZ());
             state.setPackedVolume(state.getPackedVolume() +
@@ -396,7 +360,7 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
      * @param thickness the layer thickness.
      */
     private void findLayer(PalletPackingState state, Volume orientation, double thickness) {
-        long examinedDimension, dimdif, dimension2, dimension3;
+        long examinedDimension, dimension2, dimension3;
         double layereval, eval = 1000000;
         state.setLayerThickness(0);
         for (int x = 0; x < state.getItemsToPack().length; x++) {
@@ -438,14 +402,7 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
                         }
                         if (x != z) {
                             Item otherItem = state.getItemsToPack()[z];
-                            dimdif = Math.abs(examinedDimension - otherItem.getDimension1());
-                            if (Math.abs(examinedDimension - otherItem.getDimension2()) < dimdif) {
-                                dimdif = Math.abs(examinedDimension - otherItem.getDimension2());
-                            }
-                            if (Math.abs(examinedDimension - otherItem.getDimension3()) < dimdif) {
-                                dimdif = Math.abs(examinedDimension - otherItem.getDimension3());
-                            }
-                            layereval += dimdif;
+                            layereval = getDimensionDiff(examinedDimension, layereval, otherItem);
                         }
                     }
                     if (layereval < eval) {
@@ -464,13 +421,13 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
      * Finds the most proper boxes by looking at the available orientations, empty space given, adjacent boxes
      * and container limits.
      *
+     * @param state            the packing state.
      * @param maxGapX          the container x-dimension.
-     * @param currentThickness the current layer thickness.
-     * @param maxGapY          the container y-dimension.
      * @param currentGapZ      the remaining z-dimension gap.
      * @param maxGapZ          the container z-dimension.
      */
     private void findBox(PalletPackingState state, long maxGapX, long currentGapZ, long maxGapZ) {
+        int MAX_LENGTH = 32767;
         state.setBoxFittingX(MAX_LENGTH);
         state.setBoxFittingY(MAX_LENGTH);
         state.setBoxFittingZ(MAX_LENGTH);
@@ -512,14 +469,12 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
      * if true, update the remaining space and item dimensions;<br>
      * if false, reserve the found values for a possible greater layer thickness.<br>
      *
+     * @param state       the packing state.
+     * @param index       the actual box index being evaluated.
      * @param maxGapX     the container x-dimension.
-     * @param currentGapY the current layer thickness.
-     * @param maxGapY     the container y-dimension.
      * @param currentGapZ the currently used z-dimension.
      * @param maxGapZ     the container z-dimension.
-     * @param dimension1  first item dimension.
-     * @param dimension2  second item dimension.
-     * @param dimension3  third item dimension.
+     * @param orientation the item dimensions.
      */
     private void analyzeBox(PalletPackingState state, int index, long maxGapX, long currentGapZ, long maxGapZ, Volume orientation) {
         long dimension1 = orientation.getDimension1();
@@ -648,8 +603,6 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
     }
 
     private Solution report(PalletPackingState state) {
-        long prepackedy;
-        long preremainpy;
         long packedy = 0;
 
         Volume orientation = state.getContainer().atOrientation(state.getBestVariant());
@@ -665,6 +618,18 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
             item.reset();
         }
 
+        iterationCore(state, packedy, orientation);
+
+        return new Solution(
+                new ArrayList<>(state.getInputItems()),
+                Arrays.asList(state.getItemsToPack()),
+                orientation,
+                state.getBestVolume());
+    }
+
+    private void iterationCore(PalletPackingState state, long packedy, Volume orientation) {
+        long prepackedy;
+        long preremainpy;
         do {
             state.setLayerInLayer(0);
             state.setLayerDone(false);
@@ -686,13 +651,5 @@ public class PalletPackingSimulation implements ISimulation<Container, Item> {
             }
             findLayer(state, orientation, state.getMaxAvailableThickness());
         } while (state.isPacking());
-
-        Solution solution = new Solution(
-                new ArrayList<>(state.getInputItems()),
-                Arrays.asList(state.getItemsToPack()),
-                orientation,
-                state.getBestVolume());
-
-        return solution;
     }
 }
