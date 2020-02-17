@@ -12,8 +12,6 @@ Added unit tests, using the thesis as reference for input and validation.
 
 **History**
 -----------
-0.0.1: conversion from C to java
-
-**To do list**
---------
-Finish the code rewriting, the java way.
+0.0.1: conversion from C to java.
+0.1.0: now the packing is thread-safe.
+0.1.1: fixing an issue that could pack items in negative x-positions.
