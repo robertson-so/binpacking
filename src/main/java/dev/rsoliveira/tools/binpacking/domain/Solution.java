@@ -48,12 +48,8 @@ public class Solution {
         this.completePacking = this.packedItems.size() == resultItems.size();
 
         this.remainingItems = new ArrayList<>();
-        try {
-            for (Item item : inputItems) {
-                this.remainingItems.add((Item) item.clone());
-            }
-        } catch (CloneNotSupportedException e) {
-            //
+        for (Item item : inputItems) {
+            this.remainingItems.add((Item) item.clone());
         }
         List<Item> toRemove = new ArrayList<>();
         for (Item item : remainingItems) {

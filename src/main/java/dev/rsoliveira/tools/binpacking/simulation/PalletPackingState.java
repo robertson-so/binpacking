@@ -4,9 +4,10 @@ import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.ScrapPad;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class PalletPackingState {
+public class PalletPackingState implements Cloneable {
 
     private boolean packing;
     private boolean layerDone;
@@ -71,7 +72,7 @@ public class PalletPackingState {
         this.hundredPercentPacked = false;
     }
 
-    public void resetPackedItems() {
+    public void restartPacking() {
         setPackedVolume(0.0);
         setPacking(true);
         for (int i = 0; i < getItemsToPack().length; i++) {
@@ -375,5 +376,14 @@ public class PalletPackingState {
 
     public ScrapPad getScrapFirst() {
         return scrapFirst;
+    }
+
+    @Override
+    protected Object clone() {
+        List<Item> otherItems = new ArrayList<>();
+        for (Item it : this.inputItems) {
+            otherItems.add((Item) it.clone());
+        }
+        return new PalletPackingState((Container) container.clone(), otherItems);
     }
 }

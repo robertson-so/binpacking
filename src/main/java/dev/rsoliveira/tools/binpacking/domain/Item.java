@@ -69,6 +69,30 @@ public class Item extends Volume implements Cloneable {
         return orientationZ;
     }
 
+    public double getMinPositionX() {
+        return positionX;
+    }
+
+    public long getMaxPositionX() {
+        return positionX + orientationX;
+    }
+
+    public long getMinPositionY() {
+        return positionY;
+    }
+
+    public long getMaxPositionY() {
+        return positionY + orientationY;
+    }
+
+    public long getMinPositionZ() {
+        return positionZ;
+    }
+
+    public long getMaxPositionZ() {
+        return positionZ + orientationZ;
+    }
+
     public String getCode() {
         return code;
     }
@@ -123,9 +147,22 @@ public class Item extends Volume implements Cloneable {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
-        Volume volume = (Volume) super.clone();
-        return new Item(volume.getId(), getCode(), volume.getDimension1(), volume.getDimension2(),
-                volume.getDimension3(), volume.getQuantity(), volume.getRotation());
+    public Object clone() {
+        return new Item(this.getId(), getCode(), this.getDimension1(), this.getDimension2(),
+                this.getDimension3(), this.getQuantity(), this.getRotation());
+    }
+
+    @Override
+    public String toString() {
+        return "Item{" +
+                "code='" + code + '\'' +
+                ", packed=" + packed +
+                ", positionX=" + positionX +
+                ", positionY=" + positionY +
+                ", positionZ=" + positionZ +
+                ", orientationX=" + orientationX +
+                ", orientationY=" + orientationY +
+                ", orientationZ=" + orientationZ +
+                '}';
     }
 }

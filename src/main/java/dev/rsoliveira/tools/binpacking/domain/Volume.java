@@ -6,6 +6,7 @@ public class Volume implements Cloneable {
     private int quantity;
     private long dimension1, dimension2, dimension3;
     private ItemRotation rotation;
+    private ItemOrientation orientation;
 
     public Volume() {
         //
@@ -18,10 +19,15 @@ public class Volume implements Cloneable {
         this.dimension3 = dimension3;
         this.quantity = quantity;
         this.rotation = rotation;
+        this.orientation = ItemOrientation.XYZ;
     }
 
     public double getVolume() {
         return dimension1 * dimension2 * dimension3;
+    }
+
+    public double getTotalVolume() {
+        return getVolume() * quantity;
     }
 
     public boolean isCubic() {
@@ -42,6 +48,10 @@ public class Volume implements Cloneable {
 
     public ItemRotation getRotation() {
         return rotation;
+    }
+
+    public ItemOrientation getOrientation() {
+        return orientation;
     }
 
     public int getQuantity() {
@@ -76,6 +86,10 @@ public class Volume implements Cloneable {
         this.rotation = rotation;
     }
 
+    public void setOrientation(ItemOrientation orientation) {
+        this.orientation = orientation;
+    }
+
     public Volume atOrientation(int orientation) {
         try {
             Volume ret = (Volume) this.clone();
@@ -84,36 +98,42 @@ public class Volume implements Cloneable {
                     ret.dimension1 = dimension3;
                     ret.dimension2 = dimension2;
                     ret.dimension3 = dimension1;
+                    ret.orientation = ItemOrientation.ZYX;
                     break;
                 }
                 case 3: {
                     ret.dimension1 = dimension3;
                     ret.dimension2 = dimension1;
                     ret.dimension3 = dimension2;
+                    ret.orientation = ItemOrientation.ZXY;
                     break;
                 }
                 case 4: {
                     ret.dimension1 = dimension2;
                     ret.dimension2 = dimension1;
                     ret.dimension3 = dimension3;
+                    ret.orientation = ItemOrientation.YXZ;
                     break;
                 }
                 case 5: {
                     ret.dimension1 = dimension1;
                     ret.dimension2 = dimension3;
                     ret.dimension3 = dimension2;
+                    ret.orientation = ItemOrientation.XZY;
                     break;
                 }
                 case 6: {
                     ret.dimension1 = dimension2;
                     ret.dimension2 = dimension3;
                     ret.dimension3 = dimension1;
+                    ret.orientation = ItemOrientation.YZX;
                     break;
                 }
                 default: {
                     ret.dimension1 = dimension1;
                     ret.dimension2 = dimension2;
                     ret.dimension3 = dimension3;
+                    ret.orientation = ItemOrientation.XYZ;
                     break;
                 }
             }

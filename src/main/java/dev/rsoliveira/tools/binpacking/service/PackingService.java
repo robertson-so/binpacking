@@ -3,8 +3,8 @@ package dev.rsoliveira.tools.binpacking.service;
 import dev.rsoliveira.tools.binpacking.domain.Container;
 import dev.rsoliveira.tools.binpacking.domain.Item;
 import dev.rsoliveira.tools.binpacking.domain.Solution;
-import dev.rsoliveira.tools.binpacking.simulation.PalletPackingSimulation;
 import dev.rsoliveira.tools.binpacking.simulation.ISimulation;
+import dev.rsoliveira.tools.binpacking.simulation.PalletPackingSimulation;
 
 import java.util.ArrayList;
 import java.util.List;
